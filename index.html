@@ -1758,9 +1758,6 @@ function openTupper(wOff,day){
       ingsEl.innerHTML+=`<div class="tmodal-ing"><span class="tmodal-ing-n">${ing.name}</span><span class="tmodal-ing-q">${ing.qty||'—'}</span></div>`;
     });
   }
-  catch(e){}
-  }
-  return result;
 }
 function openRecipeModal(recipeId){
   const r=recipes.find(x=>x.id===recipeId);if(!r)return;
