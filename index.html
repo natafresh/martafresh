@@ -8,7 +8,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="MartaFresh">
 <link rel="manifest" href="/manifest.json">
-<link rel="apple-touch-icon" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/stretching.png">
+<link rel="icon" type="image/png" href="/stretching.png">
 <title>Planificador · MartaFresh</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Lora:wght@600&display=swap');
@@ -183,6 +184,7 @@ body{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background
 .lgrp-dot{width:8px;height:8px;border-radius:50%;}
 .litem{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border-light);font-size:12px;cursor:pointer;flex-wrap:wrap;}
 .litem:last-child{border-bottom:none;}
+.litem.hidden{display:none;}
 .litem.checked .iname{text-decoration:line-through;color:var(--faint);}
 .litem.pantry-item .iname{color:var(--muted);}
 .lchk{width:15px;height:15px;border:1.5px solid var(--border);border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:background .1s,border-color .1s;}
@@ -357,7 +359,8 @@ body{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background
 .day-bar-lbl{width:24px;font-weight:600;color:var(--muted);flex-shrink:0;}
 .day-bar-wrap{flex:1;background:var(--light);border-radius:4px;height:22px;position:relative;overflow:hidden;}
 .day-bar-fill{height:100%;border-radius:4px;transition:width .4s;}
-.day-bar-obj{position:absolute;top:0;bottom:0;width:2px;background:#c0392b;opacity:.4;}
+.day-bar-obj{position:absolute;top:0;bottom:0;width:2px;background:#e0a830;opacity:.5;border-left:2px dashed #e0a830;}
+.day-bar-tdee{position:absolute;top:0;bottom:0;width:2px;background:#c0392b;opacity:.5;}
 .day-bar-val{width:70px;text-align:right;font-size:11px;color:var(--muted);}
 .day-bar-state{font-size:12px;width:18px;}
 .prot-grid{display:flex;gap:14px;align-items:center;flex-wrap:wrap;}
@@ -589,9 +592,10 @@ body{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background
 @media (max-width: 680px){
   .tab-desktop{display:none !important;}
   .tbr-desktop{display:none !important;}
-  .tabs-bar{padding:0 12px;}
-  .logo span{display:none;}
+  .tabs-bar{padding:0 8px;flex-wrap:nowrap;}
+  .logo{display:none !important;}
   .hoy-wrap{padding:20px 16px 24px;gap:20px;min-height:auto;justify-content:flex-start;}
+  .tbr{padding:0;}
 }
 @media (min-width: 681px){
   .btn-gear{display:none !important;}
@@ -743,8 +747,7 @@ body{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background
     <button onclick="closeGearPanel()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);">✕</button>
   </div>
   <div class="gear-section">Navegar</div>
-  <button class="gear-item" onclick="switchTab('list');closeGearPanel()"><img src="/shoppingbag.png" style="width:28px;height:28px;object-fit:contain;"/>
-      Lista de la compra</button>
+  <button class="gear-item" onclick="switchTab('list');closeGearPanel()">🛒 Lista de la compra</button>
   <button class="gear-item" onclick="switchTab('preise');closeGearPanel()">💶 Precios</button>
   <button class="gear-item" onclick="switchTab('analisis');closeGearPanel()">📊 Análisis</button>
   <button class="gear-item" onclick="switchTab('pdf');closeGearPanel()">📄 Importar PDF</button>
@@ -814,8 +817,7 @@ body{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background
 <div class="pane" id="pane-mlist" style="padding:0;">
   <div class="mlist-pane-wrap">
     <div class="mlist-pane-header">
-      <div class="mlist-pane-title"><img src="/shoppingbag.png" style="width:28px;height:28px;object-fit:contain;"/>
-      Lista de la compra</div>
+      <div class="mlist-pane-title">🛒 Lista de la compra</div>
       <div class="mlist-pane-meta">
         <div>
           <div class="mlist-pane-stats" id="mpStats">Calculando…</div>
@@ -833,6 +835,10 @@ body{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background
       </div>
       <div class="mlist-pane-footer-row">
         <button class="mlist-pane-reset" onclick="mpReset()">↺ Restablecer todo</button>
+        <div class="seg" style="margin-left:auto;">
+          <button id="btnMlTachar" onclick="setHideCheckedMl(false)">✓ Tachar</button>
+          <button id="btnMlOcultar" onclick="setHideCheckedMl(true)">✓ Ocultar</button>
+        </div>
       </div>
     </div>
   </div>
@@ -857,6 +863,7 @@ body{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background
     </div>
     <div style="display:flex;gap:8px;">
       <button class="btn" onclick="goToday()">Hoy</button>
+      <button class="btn btn-gr" onclick="sugerirSemanaCompleta()" title="Sugerir tupper para todos los días vacíos de la semana">✨ Sugerir semana</button>
       <button class="btn" onclick="printWeek(wo)" title="Imprimir semana visible">&#128438; Esta semana</button>
       <button class="btn" onclick="printAllWeeks()" title="Imprimir las 4 semanas">&#128438; Todo</button>
     </div>
@@ -911,10 +918,14 @@ body{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background
         <button class="active" id="btnCat" onclick="setMode('cat')">Por categoría</button>
         <button id="btnRec" onclick="setMode('rec')">Por receta</button>
       </div>
+      <div class="seg">
+        <button id="btnChkTachar" onclick="setHideChecked(false)">✓ Tachar</button>
+        <button id="btnChkOcultar" onclick="setHideChecked(true)">✓ Ocultar</button>
+      </div>
       <button class="btn" onclick="uncheckAll()">Restablecer</button>
     </div>
     <button class="btn" onclick="copyWhatsApp()">📋 WhatsApp</button>
-    <button class="btn" onclick="generateMobileList()"><span style="font-size:48px">📋</span><img style="display:none" style="width:16px;height:16px;object-fit:contain;vertical-align:middle;margin-right:5px;"> Lista móvil</button>
+    <button class="btn" onclick="generateMobileList()">📱 Lista móvil</button>
     <button class="btn btn-dk" onclick="printList()">&#128438; Imprimir</button>
   </div>
   <div id="listContent"></div>
@@ -938,20 +949,19 @@ body{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background
   </div>
   <div class="price-summary-bar">
     <span class="ps-label">Coste total:</span>
-    <div class="super-total" id="totalCarrefour"><div class="super-logo" style="background:#004F9F"></div><span class="super-name">Carrefour</span><span class="super-price" id="totalPriceCarrefour">—</span></div>
-    <div class="super-total" id="totalMercadona"><div class="super-logo" style="background:#009f4d"></div><span class="super-name">Mercadona</span><span class="super-price" id="totalPriceMercadona">—</span></div>
-    <div class="super-total" id="totalLidl"><div class="super-logo" style="background:#0050aa"></div><span class="super-name">Lidl</span><span class="super-price" id="totalPriceLidl">—</span></div>
-    <div class="super-total" id="totalConsum"><div class="super-logo" style="background:#e3000b"></div><span class="super-name">Consum</span><span class="super-price" id="totalPriceConsum">—</span></div>
-  </div>
+    <div class="super-total" id="totalGadis"><div class="super-logo" style="background:#00a651"></div><span class="super-name">Gadis</span><span class="super-price" id="totalPriceGadis">—</span></div>
+    <div class="super-total" id="totalAlimerka"><div class="super-logo" style="background:#e30613"></div><span class="super-name">Alimerka</span><span class="super-price" id="totalPriceAlimerka">—</span></div>
+    <div class="super-total" id="totalFroiz"><div class="super-logo" style="background:#f7941d"></div><span class="super-name">Froiz</span><span class="super-price" id="totalPriceFroiz">—</span></div>
+    
   <div class="price-table-card">
     <table class="price-table" id="priceTable">
       <thead><tr>
         <th>Ingrediente</th><th>En plan</th>
         <th style="text-align:center;min-width:90px;">Tamaño envase</th>
-        <th class="super-col"><span style="color:#004F9F">●</span> Carrefour</th>
-        <th class="super-col"><span style="color:#009f4d">●</span> Mercadona</th>
-        <th class="super-col"><span style="color:#0050aa">●</span> Lidl</th>
-        <th class="super-col"><span style="color:#e3000b">●</span> Consum</th>
+        <th class="super-col"><span style="color:#00a651">●</span> Gadis</th>
+        <th class="super-col"><span style="color:#e30613">●</span> Alimerka</th>
+        <th class="super-col"><span style="color:#f7941d">●</span> Froiz</th>
+        
         <th></th>
       </tr></thead>
       <tbody id="priceTableBody"></tbody>
@@ -959,10 +969,10 @@ body{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background
     <div class="add-ing-row" id="addIngRow" style="display:none;">
       <input class="add-ing-name" type="text" id="newIngName" placeholder="Ingrediente (ej. Pechuga de pollo)"/>
       <input type="text" id="newIngPack" placeholder="Tamaño envase (ej: 200g)" style="width:130px;" />
-      <input type="number" id="newIngCarrefour" placeholder="Carrefour €" step="0.01" min="0" style="width:90px;"/>
-      <input type="number" id="newIngMercadona" placeholder="Mercadona €" step="0.01" min="0" style="width:90px;"/>
-      <input type="number" id="newIngLidl" placeholder="Lidl €" step="0.01" min="0" style="width:90px;"/>
-      <input type="number" id="newIngConsum" placeholder="Consum €" step="0.01" min="0" style="width:90px;"/>
+      <input type="number" id="newIngGadis" placeholder="Gadis €" step="0.01" min="0" style="width:90px;"/>
+      <input type="number" id="newIngAlimerka" placeholder="Alimerka €" step="0.01" min="0" style="width:90px;"/>
+      <input type="number" id="newIngFroiz" placeholder="Froiz €" step="0.01" min="0" style="width:90px;"/>
+      
       <button class="btn btn-dk" onclick="confirmAddIng()">Añadir</button>
       <button class="btn" onclick="cancelAddIng()">Cancelar</button>
     </div>
@@ -1018,7 +1028,7 @@ body{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background
       </div>
       <div class="fg-m"><label>Tiempo</label><input type="text" id="mTime" placeholder="30 min"/></div>
     </div>
-    <div class="fg-m"><label>Ingredientes (separados por coma)</label><input type="text" id="mIngs" placeholder="Patatas, p1, brócoli..."/></div>
+    <div class="fg-m"><label>Ingredientes (separados por coma)</label><input type="text" id="mIngs" placeholder="Patatas, nata, brócoli..."/></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
       <div class="fg-m"><label>Semana</label><select id="mWeek"></select></div>
       <div class="fg-m"><label>Día</label>
@@ -1044,6 +1054,7 @@ body{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background
   <div class="an-week-nav">
     <button onclick="anWo--;renderAnalisis()">‹ Anterior</button>
     <div class="an-week-label" id="anWeekLabel"></div>
+    <button onclick="anWo=wo;renderAnalisis()" style="font-size:11px;padding:4px 8px;opacity:.7;">Hoy</button>
     <button onclick="anWo++;renderAnalisis()">Siguiente ›</button>
   </div>
   <div id="anContent"></div>
@@ -1127,33 +1138,33 @@ body{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background
 
   <div class="pdf-section">Color / Proteína</div>
   <div class="prot-grid" id="pdfProtGrid">
-    <button class="prot-btn active" data-p="huhn"    onclick="pdfSetProt('huhn')">🟡 Geflügel</button>
-    <button class="prot-btn"        data-p="schwein" onclick="pdfSetProt('schwein')">🟣 Schwein</button>
-    <button class="prot-btn"        data-p="fisch"   onclick="pdfSetProt('fisch')">🔵 Fisch</button>
-    <button class="prot-btn"        data-p="veggi"   onclick="pdfSetProt('veggi')">🟢 Vegetarisch</button>
-    <button class="prot-btn"        data-p="rind"    onclick="pdfSetProt('rind')">🟤 Rind</button>
-    <button class="prot-btn"        data-p="wurst"   onclick="pdfSetProt('wurst')">🟠 Wurst</button>
+    <button class="prot-btn active" data-p="huhn"    onclick="pdfSetProt('huhn')">🟡 Pollo</button>
+    <button class="prot-btn"        data-p="schwein" onclick="pdfSetProt('schwein')">🟣 Cerdo</button>
+    <button class="prot-btn"        data-p="fisch"   onclick="pdfSetProt('fisch')">🔵 Pescado</button>
+    <button class="prot-btn"        data-p="veggi"   onclick="pdfSetProt('veggi')">🟢 Vegetariano</button>
+    <button class="prot-btn"        data-p="rind"    onclick="pdfSetProt('rind')">🟤 Ternera</button>
+    <button class="prot-btn"        data-p="wurst"   onclick="pdfSetProt('wurst')">🟠 Embutido</button>
   </div>
 
   <div class="pdf-section">Cabecera</div>
-  <div class="pdf-field"><label>Rezeptname</label><input type="text" id="pdfName"></div>
-  <div class="pdf-field"><label>Untertitel</label><input type="text" id="pdfSub2"></div>
+  <div class="pdf-field"><label>Nombre de la receta</label><input type="text" id="pdfName"></div>
+  <div class="pdf-field"><label>Subtítulo</label><input type="text" id="pdfSub2"></div>
   <div class="pdf-row3">
-    <div class="pdf-field"><label>Zeit (Min)</label><input type="text" id="pdfTime"></div>
+    <div class="pdf-field"><label>Tiempo (Min)</label><input type="text" id="pdfTime"></div>
     <div class="pdf-field"><label>Kcal</label><input type="text" id="pdfKcal"></div>
-    <div class="pdf-field"><label>Schwierigkeit</label>
-      <select id="pdfDiff"><option>Einfach</option><option>Mittel</option><option>Anspruchsvoll</option></select>
+    <div class="pdf-field"><label>Dificultad</label>
+      <select id="pdfDiff"><option>Fácil</option><option>Medio</option><option>Difícil</option></select>
     </div>
   </div>
 
-  <div class="pdf-section">Nährwerte (pro Portion)</div>
+  <div class="pdf-section">Valores nutricionales (por porción)</div>
   <div class="pdf-row2">
-    <div class="pdf-field"><label>Eiweiß (g)</label><input type="text" id="pdfProt"></div>
-    <div class="pdf-field"><label>Kohlenhydrate (g)</label><input type="text" id="pdfHc"></div>
+    <div class="pdf-field"><label>Proteína (g)</label><input type="text" id="pdfProt"></div>
+    <div class="pdf-field"><label>Hidratos (g)</label><input type="text" id="pdfHc"></div>
   </div>
   <div class="pdf-row2">
-    <div class="pdf-field"><label>Fett (g)</label><input type="text" id="pdfFett"></div>
-    <div class="pdf-field"><label>Ballaststoffe (g)</label><input type="text" id="pdfFibra"></div>
+    <div class="pdf-field"><label>Grasas (g)</label><input type="text" id="pdfFett"></div>
+    <div class="pdf-field"><label>Fibra (g)</label><input type="text" id="pdfFibra"></div>
   </div>
 
   <div class="pdf-section">Zutaten</div>
@@ -1203,6 +1214,9 @@ body{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background
   <div class="lmodal" style="max-width:480px;max-height:90vh;overflow-y:auto;position:relative;">
     <div class="lmodal-t" id="lmodalTitle">Comida del mediodía</div>
     <div class="lmodal-sub" id="lmodalSub"></div>
+    <div style="margin-bottom:10px;">
+      <button class="btn btn-gr" style="width:100%;padding:9px;" onclick="sugerirTupper()">✨ Sugerir tupper</button>
+    </div>
     <div style="display:flex;gap:10px;margin-bottom:10px;">
       <div style="flex:1;">
         <div class="lmodal-person">
@@ -1212,8 +1226,7 @@ body{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background
         </div>
       </div>
     </div>
-    <div class="lmodal-person">
-    </div>
+
     <div class="lmodal-person" style="margin-bottom:8px;">
       <label>⏱ Tiempo de preparación</label>
       <input type="text" id="lmodalPrepTime" placeholder="Ej. 10 min" style="width:100%;font-family:'DM Sans',sans-serif;font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:6px;outline:none;"/>
@@ -1261,7 +1274,7 @@ body{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background
     <div class="lmodal-sub">Los ingredientes o preparaciones que cada persona quiere evitar</div>
     <div class="avoid-cols">
       <div>
-        <div class="avoid-col-t">🧡 Marta — evitar</div>
+        <div class="avoid-col-t">🧡 Marta — lo que evita</div>
         <div id="avoidTagsP1"></div>
         <div class="avoid-add-row">
           <input type="text" id="avoidInputP1" placeholder="Añadir..." onkeydown="if(event.key==='Enter')addAvoid('p1')"/>
@@ -1272,6 +1285,36 @@ body{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background
     <div class="mact">
       <button class="btn" onclick="closeAvoidModal()">Cerrar</button>
     </div>
+    <hr style="border:none;border-top:1px solid var(--border);margin:18px 0 14px;">
+    <div class="lmodal-t" style="font-size:14px;margin-bottom:4px;">📊 Mi perfil calórico</div>
+    <div class="lmodal-sub" style="margin-bottom:12px;">Usado para calcular tu objetivo calórico y el análisis semanal</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;">
+      <div><label style="font-size:11px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px;">Peso (kg)</label>
+        <input type="number" id="profPeso" style="width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:7px;font-family:'DM Sans',sans-serif;font-size:13px;box-sizing:border-box;" step="0.1" oninput="updateProfResult()"></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px;">Altura (cm)</label>
+        <input type="number" id="profAltura" style="width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:7px;font-family:'DM Sans',sans-serif;font-size:13px;box-sizing:border-box;" oninput="updateProfResult()"></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px;">Edad</label>
+        <input type="number" id="profEdad" style="width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:7px;font-family:'DM Sans',sans-serif;font-size:13px;box-sizing:border-box;" oninput="updateProfResult()"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+      <div><label style="font-size:11px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px;">Actividad</label>
+        <select id="profActividad" style="width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:7px;font-family:'DM Sans',sans-serif;font-size:13px;" onchange="updateProfResult()">
+          <option value="sedentaria">Sedentaria (oficina)</option>
+          <option value="ligera">Ligera (caminar)</option>
+          <option value="moderada">Moderada (ejercicio)</option>
+        </select></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px;">Déficit objetivo</label>
+        <select id="profDeficit" style="width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:7px;font-family:'DM Sans',sans-serif;font-size:13px;" onchange="updateProfResult()">
+          <option value="250">Conservador (-250 kcal)</option>
+          <option value="400">Moderado (-400 kcal)</option>
+          <option value="600">Agresivo (-600 kcal)</option>
+        </select></div>
+    </div>
+    <div style="margin-bottom:12px;"><label style="font-size:11px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px;">Calorías fijas/día <span style="font-weight:400;">(desayuno + cafés + snacks fijos)</span></label>
+      <input type="number" id="profFijo" style="width:120px;padding:7px 9px;border:1px solid var(--border);border-radius:7px;font-family:'DM Sans',sans-serif;font-size:13px;" oninput="updateProfResult()">
+    </div>
+    <div id="profResult" style="background:var(--light);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.6;"></div>
+    <button class="btn btn-dk" style="width:100%;" onclick="saveProfile()">💾 Guardar perfil</button>
   </div>
 </div>
 
@@ -1280,11 +1323,9 @@ body{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background
 const SUPA_URL='https://rnzsgsiiajusmrvvatrj.supabase.co';
 const SUPA_KEY='sb_publishable_aSDL0I0KLVFof2mpsRjBRw_tqgSdq6U';
 const SUPA_HEADERS={'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'};
-// ── USER KEY ────────────────────────────────────────────────────────────────
 const USER_SLUG = 'marta';
 function getDataKey(){ return 'hf_v4_' + USER_SLUG; }
 function getRecipesKey(){ return 'hf_recipes_' + USER_SLUG; }
-// ────────────────────────────────────────────────────────────────────────────
 // ──────────────────────────────────────────────────────────────────────────
 
 const C={
@@ -1299,14 +1340,14 @@ const OS={'3x2':{bg:'#fef3cd',t:'#856404'},'2x1':{bg:'#d1ecf1',t:'#0c5460'},'50%
 const OL={'3x2':'3x2','2x1':'2x1','50%':'50% 2ª ud.','70%':'70% 2ª ud.','desc':'Precio rebajado'};
 const DAYS=['Lu','Ma','Mi','Ju','Vi','Sá','Do'];
 const DAYS_F=['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
-const SUPERS=['carrefour','mercadona','lidl','consum'];
-const SUPER_COLORS={carrefour:'#004F9F',mercadona:'#009f4d',lidl:'#0050aa',consum:'#e3000b'};
-const SUPER_NAMES={carrefour:'Carrefour',mercadona:'Mercadona',lidl:'Lidl',consum:'Consum'};
+const SUPERS=['gadis','alimerka','froiz'];
+const SUPER_COLORS={gadis:'#00a651',alimerka:'#e30613',froiz:'#f7941d'};
+const SUPER_NAMES={gadis:'Gadis',alimerka:'Alimerka',froiz:'Froiz'};
 const CATS={
   'Carne y Pescado':['hähnchen','huhn','lachs','schweinefilet','schnitzel','schweine','rind','würstchen','wurst','thunfisch','garnelen','pute','hähnchengeschnetzeltes','hähnchenbrustfilet','bacon','speck','pollo','salmón','cerdo','ternera'],
   'Verduras':['brokkoli','karotte','zucchini','gurke','tomate','porree','zwiebel','knoblauch','spinat','rucola','blattsalat','champignons','pilze','brócoli','zanahoria','cebolla','ajo','espinaca'],
   'Fruta y Frescos':['zitrone','avocado','aprikose','limón','aguacate'],
-  'Lácteos y Huevos':['sahne','kochsahne','crème fraîche','joghurt','schmand','frischecreme','hartkäse','käse','butter','milch','p1','queso','mantequilla','leche'],
+  'Lácteos y Huevos':['sahne','kochsahne','crème fraîche','joghurt','schmand','frischecreme','hartkäse','käse','butter','milch','nata','queso','mantequilla','leche'],
   'Pasta y Cereales':['tortellini','spätzle','risottoreis','reis','pankomehl','semmelbrösel','mehl','tortilla','arroz','pasta'],
   'Conservas y Salsas':['linsen','pesto','konfitüre','basilikumpaste','brühe','senf','mayonnaise','lentejas'],
   'Especias y Aceites':['olivenöl','öl','rosmarin','honig','balsamico','gewürz','hello','aceite','romero','miel'],
@@ -1320,10 +1361,11 @@ const PRICE_EST={huhn:5,schwein:5,fisch:12,veggi:3,rind:8,wurst:4};
 let wo=0,dragId=null,dragLunchKey=null,nid=100;
 let epoch=null;
 let weightLog={};
+let cycleWeeks=new Set(); // keys tipo "19_2026"
 let leftovers={};
 let cheatDays={};
 let catOverrides={}; // {ingKey: catName}
-let recipes=[],offers=[],checked={},listMode='cat',listWo=0;
+let recipes=[],offers=[],checked={},listMode='cat',listWo=0,hideChecked=false;
 let aliases={};
 let shopDayOfWeek=5,shopDateOverride=null;
 let prices={};
@@ -1389,6 +1431,9 @@ async function load(){
       cheatDays=d.cheatDays||{};catOverrides=d.catOverrides||{};
       mlExtra=d.mlExtra||[];
       if(d.epoch)epoch=new Date(d.epoch);
+      if(d.userProfile)userProfile={...userProfile,...d.userProfile};
+      if(d.cycleWeeks)cycleWeeks=new Set(d.cycleWeeks);
+      updateProfileConstants();
     }
   }catch(e){console.error('Load error',e);}
   // Cargar recipeData por separado (puede ser grande por las fotos)
@@ -1408,7 +1453,7 @@ function save(){
   clearTimeout(_saveTimer);
   _saveTimer=setTimeout(async()=>{
     try{
-      const payload={key:getDataKey(),value:{r:recipes,o:offers,c:checked,n:nid,sdw:shopDayOfWeek,sdd:shopDateOverride,prices,pantry:[...pantry],ratings,aliases,lunches,avoidList,weightLog,leftovers,cheatDays,catOverrides,mlExtra,epoch:epoch?epoch.toISOString():null},updated_at:new Date().toISOString()};
+      const payload={key:getDataKey(),value:{r:recipes,o:offers,c:checked,n:nid,sdw:shopDayOfWeek,sdd:shopDateOverride,prices,pantry:[...pantry],ratings,aliases,lunches,avoidList,weightLog,leftovers,cheatDays,catOverrides,mlExtra,epoch:epoch?epoch.toISOString():null,userProfile,cycleWeeks:[...cycleWeeks]},updated_at:new Date().toISOString()};
       await fetch(`${SUPA_URL}/rest/v1/planificador_data`,{
         method:'POST',
         headers:{...SUPA_HEADERS,'Prefer':'resolution=merge-duplicates'},
@@ -1659,10 +1704,10 @@ function makeLunchCell(wOff,day){
   return wrap;
 }
 
-let lunchEditState={wo:null,day:null};
+let lunchEditState={wo:null,day:null,kcal:null};
 
 function openLunchModal(wOff,day){
-  lunchEditState={wo:wOff,day};
+  lunchEditState={wo:wOff,day,kcal:null};
   const cd=getDayDate(wOff,day);
   const rec=recipes.find(r=>r.wo===wOff&&r.day===day);
   document.getElementById('lmodalTitle').textContent=`Comida — ${DAYS_F[day]} ${fmt(cd)}`;
@@ -1680,7 +1725,7 @@ function openLunchModal(wOff,day){
   
   document.getElementById('lmodalOv').classList.add('open');
   document.getElementById('lmodalP1').focus();
-  ['Marta'].forEach(p=>{
+  ['p1'].forEach(p=>{
     const el=document.getElementById('lmodalP1');
     el.oninput=()=>checkLunchAvoidLive(p.toLowerCase());
   });
@@ -1739,8 +1784,10 @@ function saveLunchModal(){
   
   const steps=getStepRows();
   
-  if(p1||ings.length||steps.length||prep_time)
+  if(p1||ings.length||steps.length||prep_time){
     lunches[key]={p1,prep_time,ings,steps};
+    if(lunchEditState.kcal)lunches[key].kcal=lunchEditState.kcal;
+  }
   else delete lunches[key];
   save();closeLunchModal();render();showToast('Comida guardada');
 }
@@ -1753,6 +1800,227 @@ function clearLunch(){
 
 function closeLunchModal(){document.getElementById('lmodalOv').classList.remove('open');}
 
+const TUPPER_DB={
+  huhn:[
+    {name:'Lentejas con zanahoria y comino',kcal:330,prep_time:'20 min',ings:[{name:'Lentejas pardinas',qty:'60g'},{name:'Zanahoria',qty:'1 ud'},{name:'Cebolla',qty:'½ ud'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Comino',qty:'1 TL'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Cocer lentejas',text:'Cuece las lentejas con la zanahoria en trozos en agua con sal 18 min.'},{title:'Sofrito',text:'Sofríe la cebolla con aceite y comino 3 min. Mezcla con las lentejas. Ajusta sal.'}]},
+    {name:'Ensalada niçoise con atún y huevo',kcal:320,prep_time:'15 min',ings:[{name:'Atún al natural',qty:'100g'},{name:'Huevo',qty:'1 ud'},{name:'Judías verdes',qty:'100g'},{name:'Olivas negras',qty:'20g'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Vinagre',qty:'1 TL'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Cocer',text:'Cuece el huevo 10 min y las judías 5 min en agua con sal. Enfría.'},{title:'Montar',text:'Coloca el atún, huevo en cuartos, judías y olivas. Aliña con aceite, vinagre y sal.'}]},
+    {name:'Tortilla de champiñones y pimiento',kcal:290,prep_time:'12 min',ings:[{name:'Huevos',qty:'2 ud'},{name:'Champiñones',qty:'150g'},{name:'Pimiento rojo',qty:'½ ud'},{name:'Ajo',qty:'1 diente'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Saltear',text:'Lamina los champiñones y corta el pimiento en dados. Saltea con ajo y aceite 4 min.'},{title:'Cuajar',text:'Bate los huevos con sal, añade las verduras y cuaja 4 min a fuego medio.'}]},
+    {name:'Salmón al horno con judías verdes',kcal:350,prep_time:'20 min',ings:[{name:'Lomo de salmón',qty:'120g'},{name:'Judías verdes',qty:'150g'},{name:'Limón',qty:'½ ud'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Sal y pimienta',qty:'al gusto'}],steps:[{title:'Hornear',text:'Coloca el salmón en bandeja con aceite, limón, sal y pimienta. Hornea 180°C 15 min.'},{title:'Judías',text:'Cuece las judías 5 min en agua con sal. Escurre y sirve junto al salmón.'}]},
+    {name:'Pasta fría con atún y tomate cherry',kcal:380,prep_time:'15 min',ings:[{name:'Pasta',qty:'55g'},{name:'Atún al natural',qty:'100g'},{name:'Tomate cherry',qty:'80g'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Orégano',qty:'½ TL'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Cocer pasta',text:'Cuece la pasta en agua con sal. Escurre y enfría bajo el grifo.'},{title:'Montar',text:'Mezcla la pasta con el atún escurrido, los cherry cortados, aceite, orégano y sal.'}]},
+    {name:'Frittata de calabacín y feta',kcal:310,prep_time:'15 min',ings:[{name:'Huevos',qty:'2 ud'},{name:'Calabacín',qty:'1 ud'},{name:'Queso feta',qty:'30g'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Sal y pimienta',qty:'al gusto'}],steps:[{title:'Saltear',text:'Corta el calabacín en dados y saltea con aceite y sal 3 min.'},{title:'Cuajar',text:'Bate los huevos con sal, añade el calabacín y el feta desmenuzado. Cuaja a fuego bajo 6 min con tapa.'}]},
+    {name:'Ensalada de garbanzos con pepino y limón',kcal:340,prep_time:'10 min',ings:[{name:'Garbanzos cocidos',qty:'150g'},{name:'Pepino',qty:'½ ud'},{name:'Tomate cherry',qty:'80g'},{name:'Zumo de limón',qty:'1 EL'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Preparar',text:'Escurre los garbanzos. Corta el pepino en dados y los cherry por la mitad. Mezcla todo con zumo de limón, aceite y sal.'}]},
+    {name:'Bowl de arroz con salmón y edamame',kcal:400,prep_time:'20 min',ings:[{name:'Arroz',qty:'45g'},{name:'Lomo de salmón',qty:'80g'},{name:'Edamame congelado',qty:'60g'},{name:'Salsa de soja',qty:'1 EL'},{name:'Aceite de sésamo',qty:'1 TL'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Cocer',text:'Cuece el arroz y el edamame por separado.'},{title:'Salmón',text:'Cocina el salmón a la plancha 3 min por lado. Desmenuza. Sirve sobre el arroz con edamame, soja y sésamo.'}]},
+    {name:'Wrap de pavo con aguacate y tomate',kcal:360,prep_time:'10 min',ings:[{name:'Tortilla de trigo',qty:'1 ud'},{name:'Fiambre de pavo',qty:'80g'},{name:'Aguacate',qty:'½ ud'},{name:'Tomate',qty:'½ ud'},{name:'Zumo de limón',qty:'unas gotas'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Rellenar',text:'Aplasta el aguacate con limón y sal. Unta la tortilla, añade el pavo y el tomate en rodajas. Enrolla.'}]},
+    {name:'Ensalada de alubias blancas con atún',kcal:350,prep_time:'10 min',ings:[{name:'Alubias blancas cocidas',qty:'150g'},{name:'Atún al natural',qty:'80g'},{name:'Cebolla morada',qty:'¼ ud'},{name:'Perejil fresco',qty:'1 puñado'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Vinagre',qty:'1 TL'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Preparar',text:'Escurre las alubias y el atún. Pica la cebolla fina. Mezcla todo con el perejil, aceite, vinagre y sal.'}]},
+  ],
+  schwein:[
+    {name:'Pechuga de pollo con pimientos asados',kcal:280,prep_time:'15 min',ings:[{name:'Pechuga de pollo',qty:'140g'},{name:'Pimiento rojo',qty:'1 ud'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Pimentón',qty:'½ TL'},{name:'Sal y pimienta',qty:'al gusto'}],steps:[{title:'Asar pimiento',text:'Corta el pimiento en tiras y ásalo en sartén con aceite a fuego medio 8 min.'},{title:'Pollo',text:'Salpimienta el pollo con pimentón y cocina a la plancha 4 min por lado.'}]},
+    {name:'Ensalada de atún con huevo y judías',kcal:290,prep_time:'15 min',ings:[{name:'Atún al natural',qty:'100g'},{name:'Huevos',qty:'2 ud'},{name:'Judías verdes',qty:'120g'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Vinagre',qty:'1 TL'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Cocer',text:'Cuece los huevos 10 min y las judías 5 min. Enfría.'},{title:'Montar',text:'Combina el atún, las judías y los huevos en cuartos. Aliña con aceite, vinagre y sal.'}]},
+    {name:'Bowl de arroz con pollo al curry',kcal:400,prep_time:'20 min',ings:[{name:'Arroz',qty:'50g'},{name:'Pechuga de pollo',qty:'120g'},{name:'Curry en polvo',qty:'1 TL'},{name:'Yogur natural',qty:'2 EL'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Cocer arroz',text:'Cuece el arroz según indicaciones.'},{title:'Pollo al curry',text:'Corta el pollo en dados. Sofríe con aceite y curry 6 min. Mezcla con el yogur fuera del fuego. Sirve sobre el arroz.'}]},
+    {name:'Salmón con espárragos al limón',kcal:320,prep_time:'20 min',ings:[{name:'Lomo de salmón',qty:'120g'},{name:'Espárragos verdes',qty:'150g'},{name:'Limón',qty:'½ ud'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Sal y pimienta',qty:'al gusto'}],steps:[{title:'Hornear',text:'Coloca el salmón y los espárragos en bandeja. Aliña con aceite, limón, sal y pimienta. Hornea 180°C 15 min.'}]},
+    {name:'Wrap de pollo con tomate y queso fresco',kcal:360,prep_time:'10 min',ings:[{name:'Tortilla de trigo',qty:'1 ud'},{name:'Pechuga de pollo cocida',qty:'100g'},{name:'Tomate',qty:'½ ud'},{name:'Queso fresco',qty:'40g'},{name:'Lechuga',qty:'2 hojas'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Rellenar',text:'Desmenuza el pollo. Coloca sobre la tortilla la lechuga, el tomate en rodajas, el pollo y el queso. Enrolla.'}]},
+    {name:'Ensalada de garbanzos con espinacas',kcal:310,prep_time:'10 min',ings:[{name:'Garbanzos cocidos',qty:'150g'},{name:'Espinacas frescas',qty:'60g'},{name:'Tomate cherry',qty:'80g'},{name:'Zumo de limón',qty:'1 EL'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Preparar',text:'Escurre los garbanzos. Mezcla con las espinacas, los cherry, limón, aceite y sal. Deja reposar 5 min.'}]},
+    {name:'Tortilla de espinacas con ensalada',kcal:280,prep_time:'10 min',ings:[{name:'Huevos',qty:'2 ud'},{name:'Espinacas frescas',qty:'60g'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Lechuga',qty:'1 puñado'},{name:'Tomate',qty:'½ ud'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Hacer tortilla',text:'Saltea las espinacas 1 min. Bate los huevos con sal, añade las espinacas y cuaja en sartén 4 min.'},{title:'Servir',text:'Acompaña con la lechuga y el tomate aliñados.'}]},
+    {name:'Pasta con pollo, tomate y albahaca',kcal:400,prep_time:'20 min',ings:[{name:'Pasta',qty:'55g'},{name:'Pechuga de pollo',qty:'100g'},{name:'Tomate cherry',qty:'80g'},{name:'Albahaca fresca',qty:'unas hojas'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Cocer pasta',text:'Cuece la pasta en agua con sal.'},{title:'Montar',text:'Cocina el pollo en dados 5 min. Mezcla todo con los cherry, albahaca y aceite.'}]},
+    {name:'Lentejas rojas con jengibre y coco',kcal:340,prep_time:'20 min',ings:[{name:'Lentejas rojas',qty:'60g'},{name:'Leche de coco',qty:'80ml'},{name:'Jengibre fresco rallado',qty:'1 TL'},{name:'Cúrcuma',qty:'½ TL'},{name:'Cebolla',qty:'½ ud'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Sofrito',text:'Sofríe la cebolla con aceite, jengibre y cúrcuma 3 min.'},{title:'Cocer',text:'Añade las lentejas, la leche de coco y 100ml de agua. Cuece 15 min. Salpimienta.'}]},
+    {name:'Bowl de arroz con salmón teriyaki',kcal:400,prep_time:'20 min',ings:[{name:'Arroz',qty:'50g'},{name:'Lomo de salmón',qty:'110g'},{name:'Salsa de soja',qty:'1 EL'},{name:'Miel',qty:'1 TL'},{name:'Aceite de oliva',qty:'1 TL'},{name:'Sésamo',qty:'1 TL'}],steps:[{title:'Cocer arroz',text:'Cuece el arroz.'},{title:'Teriyaki',text:'Mezcla soja y miel. Marina el salmón 5 min. Cocina en sartén con aceite 3 min por lado. Sirve sobre el arroz con sésamo.'}]},
+  ],
+  rind:[
+    {name:'Wrap de pollo con aguacate y lechuga',kcal:360,prep_time:'10 min',ings:[{name:'Tortilla de trigo',qty:'1 ud'},{name:'Pechuga de pollo cocida',qty:'100g'},{name:'Aguacate',qty:'½ ud'},{name:'Lechuga',qty:'2 hojas'},{name:'Zumo de limón',qty:'unas gotas'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Rellenar',text:'Aplasta el aguacate con limón y sal. Unta la tortilla, añade el pollo desmenuzado y la lechuga. Enrolla.'}]},
+    {name:'Ensalada de pasta con atún y olivas',kcal:370,prep_time:'15 min',ings:[{name:'Pasta',qty:'55g'},{name:'Atún al natural',qty:'100g'},{name:'Olivas negras',qty:'20g'},{name:'Tomate cherry',qty:'80g'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Cocer y enfriar',text:'Cuece la pasta. Escurre y enfría bajo el grifo.'},{title:'Montar',text:'Mezcla con el atún, las olivas y los cherry. Aliña con aceite y sal.'}]},
+    {name:'Frittata de puerro y queso',kcal:320,prep_time:'15 min',ings:[{name:'Huevos',qty:'2 ud'},{name:'Puerro',qty:'½ ud'},{name:'Queso rallado',qty:'30g'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Pan integral',qty:'1 rebanada'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Pochar puerro',text:'Corta el puerro fino y sofríe con aceite 4 min.'},{title:'Cuajar',text:'Bate los huevos con sal y queso, añade el puerro y cuaja a fuego bajo 6 min con tapa. Sirve con la tostada.'}]},
+    {name:'Salmón ahumado con rúcula y tostada',kcal:290,prep_time:'5 min',ings:[{name:'Salmón ahumado',qty:'80g'},{name:'Rúcula',qty:'1 puñado'},{name:'Pan integral',qty:'2 rebanadas'},{name:'Queso crema light',qty:'1 EL'},{name:'Pimienta negra',qty:'al gusto'}],steps:[{title:'Montar',text:'Unta las tostadas con queso crema. Coloca el salmón encima y la rúcula al lado. Añade pimienta negra.'}]},
+    {name:'Bowl de arroz con huevo poché y espinacas',kcal:360,prep_time:'15 min',ings:[{name:'Arroz',qty:'50g'},{name:'Huevos',qty:'2 ud'},{name:'Espinacas frescas',qty:'60g'},{name:'Salsa de soja',qty:'1 EL'},{name:'Aceite de sésamo',qty:'1 TL'},{name:'Vinagre',qty:'1 TL'}],steps:[{title:'Cocer arroz',text:'Cuece el arroz. Saltea las espinacas 1 min.'},{title:'Huevo poché',text:'Hierve agua con vinagre. Cuece los huevos 3 min. Sirve sobre el arroz con espinacas, soja y sésamo.'}]},
+    {name:'Ensalada de atún con aguacate y maíz',kcal:310,prep_time:'10 min',ings:[{name:'Atún al natural',qty:'100g'},{name:'Aguacate',qty:'½ ud'},{name:'Maíz cocido',qty:'3 EL'},{name:'Tomate',qty:'1 ud'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Sal y limón',qty:'al gusto'}],steps:[{title:'Preparar',text:'Corta el aguacate y el tomate en dados. Mezcla con el atún, el maíz, aceite, sal y limón.'}]},
+    {name:'Pasta fría con pesto y mozzarella',kcal:410,prep_time:'15 min',ings:[{name:'Pasta',qty:'55g'},{name:'Pesto',qty:'1 EL'},{name:'Mozzarella fresca',qty:'50g'},{name:'Tomate cherry',qty:'80g'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Cocer y enfriar',text:'Cuece la pasta. Enfría bajo el grifo.'},{title:'Montar',text:'Mezcla la pasta con el pesto, la mozzarella en dados y los cherry.'}]},
+    {name:'Garbanzos con pimiento asado y cebolla',kcal:320,prep_time:'15 min',ings:[{name:'Garbanzos cocidos',qty:'180g'},{name:'Pimiento rojo',qty:'1 ud'},{name:'Cebolla morada',qty:'¼ ud'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Pimentón ahumado',qty:'½ TL'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Asar pimiento',text:'Corta el pimiento en tiras y ásalo con aceite 8 min.'},{title:'Mezclar',text:'Escurre los garbanzos. Mezcla con el pimiento, la cebolla picada, pimentón y sal.'}]},
+    {name:'Wrap de pavo con mostaza y tomate',kcal:330,prep_time:'10 min',ings:[{name:'Tortilla de trigo',qty:'1 ud'},{name:'Fiambre de pavo',qty:'80g'},{name:'Tomate',qty:'½ ud'},{name:'Mostaza',qty:'1 TL'},{name:'Lechuga',qty:'2 hojas'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Rellenar',text:'Unta la tortilla con mostaza. Añade el pavo, la lechuga y el tomate en rodajas. Enrolla.'}]},
+    {name:'Tortilla de champiñones con ensalada verde',kcal:290,prep_time:'12 min',ings:[{name:'Huevos',qty:'2 ud'},{name:'Champiñones',qty:'150g'},{name:'Ajo',qty:'1 diente'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Lechuga',qty:'1 puñado'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Saltear',text:'Lamina los champiñones y saltea con ajo y aceite 4 min.'},{title:'Cuajar y servir',text:'Bate los huevos con sal, añade los champiñones y cuaja 4 min. Sirve con lechuga aliñada.'}]},
+  ],
+  fisch:[
+    {name:'Pechuga de pollo con calabacín y arroz',kcal:370,prep_time:'20 min',ings:[{name:'Arroz',qty:'50g'},{name:'Pechuga de pollo',qty:'130g'},{name:'Calabacín',qty:'1 ud'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Sal y pimienta',qty:'al gusto'}],steps:[{title:'Cocer arroz',text:'Cuece el arroz.'},{title:'Plancha',text:'Corta el calabacín en rodajas y cocina 3 min. Cocina el pollo con sal y pimienta 4 min por lado. Sirve con el arroz.'}]},
+    {name:'Tortilla de pimiento y cebolla',kcal:270,prep_time:'12 min',ings:[{name:'Huevos',qty:'2 ud'},{name:'Pimiento verde',qty:'1 ud'},{name:'Cebolla',qty:'½ ud'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Saltear',text:'Corta el pimiento y la cebolla en juliana. Sofríe con aceite 5 min.'},{title:'Cuajar',text:'Bate los huevos con sal, añade las verduras y cuaja 4 min.'}]},
+    {name:'Ensalada de garbanzos con pollo y albahaca',kcal:330,prep_time:'15 min',ings:[{name:'Garbanzos cocidos',qty:'130g'},{name:'Pechuga de pollo cocida',qty:'90g'},{name:'Tomate cherry',qty:'80g'},{name:'Albahaca fresca',qty:'unas hojas'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Preparar',text:'Desmenuza el pollo. Corta los cherry por la mitad. Mezcla con los garbanzos, albahaca, aceite y sal.'}]},
+    {name:'Wrap de pavo con aguacate y mostaza',kcal:330,prep_time:'10 min',ings:[{name:'Tortilla de trigo',qty:'1 ud'},{name:'Fiambre de pavo',qty:'80g'},{name:'Aguacate',qty:'½ ud'},{name:'Mostaza',qty:'1 TL'},{name:'Lechuga',qty:'2 hojas'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Rellenar',text:'Aplasta el aguacate con sal. Unta la tortilla con mostaza y aguacate. Añade el pavo y la lechuga. Enrolla.'}]},
+    {name:'Lentejas con verduras y pimentón',kcal:310,prep_time:'20 min',ings:[{name:'Lentejas pardinas',qty:'60g'},{name:'Zanahoria',qty:'1 ud'},{name:'Cebolla',qty:'½ ud'},{name:'Pimentón dulce',qty:'1 TL'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Sofrito',text:'Sofríe la cebolla y zanahoria con aceite y pimentón 3 min.'},{title:'Cocer',text:'Añade las lentejas y agua suficiente. Cuece 18 min. Ajusta sal.'}]},
+    {name:'Bowl de arroz con pollo al limón',kcal:370,prep_time:'20 min',ings:[{name:'Arroz',qty:'50g'},{name:'Pechuga de pollo',qty:'130g'},{name:'Limón',qty:'½ ud'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Ajo en polvo',qty:'½ TL'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Cocer arroz',text:'Cuece el arroz.'},{title:'Pollo',text:'Cocina el pollo con zumo de limón, aceite, ajo y sal 4 min por lado. Corta y sirve sobre el arroz.'}]},
+    {name:'Pasta con pollo y tomate fresco',kcal:400,prep_time:'20 min',ings:[{name:'Pasta',qty:'55g'},{name:'Pechuga de pollo',qty:'100g'},{name:'Tomate maduro',qty:'1 ud'},{name:'Albahaca fresca',qty:'unas hojas'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Cocer pasta',text:'Cuece la pasta.'},{title:'Montar',text:'Cocina el pollo en dados 5 min. Mezcla todo con el tomate en cubos, albahaca y aceite.'}]},
+    {name:'Ensalada de alubias rojas con maíz',kcal:300,prep_time:'10 min',ings:[{name:'Alubias rojas cocidas',qty:'150g'},{name:'Maíz cocido',qty:'3 EL'},{name:'Pimiento verde',qty:'½ ud'},{name:'Cebolleta',qty:'1 ud'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Vinagre',qty:'1 TL'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Preparar',text:'Escurre las alubias. Pica el pimiento y la cebolleta. Mezcla con el maíz, aceite, vinagre y sal.'}]},
+    {name:'Ensalada de pollo con mango y vinagreta',kcal:320,prep_time:'15 min',ings:[{name:'Pechuga de pollo cocida',qty:'110g'},{name:'Mango',qty:'½ ud'},{name:'Lechuga variada',qty:'1 puñado'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Vinagre de manzana',qty:'1 TL'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Preparar',text:'Corta el pollo en tiras y el mango en dados. Mezcla con la lechuga. Aliña con aceite, vinagre y sal.'}]},
+    {name:'Bowl de arroz con pollo y calabacín',kcal:380,prep_time:'20 min',ings:[{name:'Arroz',qty:'50g'},{name:'Pechuga de pollo',qty:'120g'},{name:'Calabacín',qty:'½ ud'},{name:'Salsa de soja',qty:'1 EL'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Cocer arroz',text:'Cuece el arroz.'},{title:'Saltear',text:'Saltea el calabacín en dados y el pollo en tiras con aceite 6 min. Añade la soja. Sirve sobre el arroz.'}]},
+  ],
+  veggi:[
+    {name:'Pollo a la plancha con rúcula y parmesano',kcal:290,prep_time:'15 min',ings:[{name:'Pechuga de pollo',qty:'130g'},{name:'Rúcula',qty:'1 puñado'},{name:'Parmesano',qty:'15g'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Limón',qty:'unas gotas'},{name:'Sal y pimienta',qty:'al gusto'}],steps:[{title:'Hacer pollo',text:'Salpimienta el pollo y cocina a la plancha 4 min por lado.'},{title:'Montar',text:'Sirve sobre la rúcula. Añade el parmesano rallado y aliña con aceite y limón.'}]},
+    {name:'Ensalada de atún con aguacate',kcal:300,prep_time:'10 min',ings:[{name:'Atún al natural',qty:'100g'},{name:'Aguacate',qty:'½ ud'},{name:'Tomate',qty:'1 ud'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Sal y limón',qty:'al gusto'}],steps:[{title:'Preparar',text:'Corta el aguacate y el tomate en dados. Mezcla con el atún escurrido, aceite, sal y limón.'}]},
+    {name:'Bowl de arroz con salmón y edamame',kcal:400,prep_time:'20 min',ings:[{name:'Arroz',qty:'45g'},{name:'Lomo de salmón',qty:'100g'},{name:'Edamame congelado',qty:'60g'},{name:'Salsa de soja',qty:'1 EL'},{name:'Aceite de sésamo',qty:'1 TL'}],steps:[{title:'Cocer',text:'Cuece el arroz y el edamame.'},{title:'Salmón',text:'Haz el salmón a la plancha 3 min por lado. Desmenuza. Sirve sobre el arroz con edamame, soja y sésamo.'}]},
+    {name:'Salmón ahumado con pepino y queso crema',kcal:280,prep_time:'5 min',ings:[{name:'Salmón ahumado',qty:'80g'},{name:'Pepino',qty:'½ ud'},{name:'Queso crema light',qty:'2 EL'},{name:'Pan integral',qty:'2 rebanadas'},{name:'Eneldo',qty:'al gusto'}],steps:[{title:'Montar',text:'Unta el pan con queso crema. Coloca el salmón encima. Sirve con el pepino en rodajas y espolvorea eneldo.'}]},
+    {name:'Pasta fría con atún y olivas',kcal:370,prep_time:'15 min',ings:[{name:'Pasta',qty:'55g'},{name:'Atún al natural',qty:'100g'},{name:'Olivas negras',qty:'20g'},{name:'Tomate cherry',qty:'80g'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Cocer y enfriar',text:'Cuece la pasta según el paquete. Enfría bajo el grifo.'},{title:'Montar',text:'Mezcla con el atún, las olivas y los cherry. Aliña con aceite y sal.'}]},
+    {name:'Wrap de pollo con queso fresco y tomate',kcal:350,prep_time:'10 min',ings:[{name:'Tortilla de trigo',qty:'1 ud'},{name:'Pechuga de pollo cocida',qty:'100g'},{name:'Queso fresco',qty:'40g'},{name:'Tomate',qty:'½ ud'},{name:'Lechuga',qty:'2 hojas'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Rellenar',text:'Coloca sobre la tortilla la lechuga, el pollo desmenuzado, el queso en dados y el tomate. Enrolla.'}]},
+    {name:'Tortilla de jamón y queso con ensalada',kcal:310,prep_time:'10 min',ings:[{name:'Huevos',qty:'2 ud'},{name:'Jamón cocido',qty:'60g'},{name:'Queso rallado',qty:'20g'},{name:'Aceite de oliva',qty:'1 TL'},{name:'Lechuga',qty:'1 puñado'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Cuajar',text:'Bate los huevos con sal. Añade el jamón en tiras y el queso. Cuaja en sartén 4 min a fuego medio.'},{title:'Servir',text:'Acompaña con lechuga aliñada.'}]},
+    {name:'Bowl de arroz con atún, maíz y aguacate',kcal:380,prep_time:'15 min',ings:[{name:'Arroz',qty:'50g'},{name:'Atún al natural',qty:'100g'},{name:'Maíz cocido',qty:'3 EL'},{name:'Aguacate',qty:'½ ud'},{name:'Salsa de soja',qty:'1 EL'},{name:'Sal y limón',qty:'al gusto'}],steps:[{title:'Cocer arroz',text:'Cuece el arroz y deja templar.'},{title:'Montar',text:'Coloca el arroz en el tupper. Añade el atún, el maíz y el aguacate en dados. Aliña con soja y limón.'}]},
+    {name:'Pavo con pimientos asados y arroz',kcal:360,prep_time:'20 min',ings:[{name:'Arroz',qty:'50g'},{name:'Filete de pavo',qty:'140g'},{name:'Pimiento rojo',qty:'1 ud'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Pimentón',qty:'½ TL'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Cocer arroz',text:'Cuece el arroz.'},{title:'Plancha',text:'Asa el pimiento en tiras 8 min. Cocina el pavo con pimentón y sal 4 min por lado. Sirve con el arroz.'}]},
+    {name:'Ensalada de pasta con pollo y piñones',kcal:400,prep_time:'20 min',ings:[{name:'Pasta',qty:'55g'},{name:'Pechuga de pollo cocida',qty:'100g'},{name:'Tomate cherry',qty:'80g'},{name:'Piñones',qty:'1 EL'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Cocer y enfriar',text:'Cuece la pasta y enfría.'},{title:'Montar',text:'Mezcla con el pollo en dados, los cherry, los piñones tostados y aceite.'}]},
+  ],
+  wurst:[
+    {name:'Pollo con judías verdes y salsa de yogur',kcal:280,prep_time:'15 min',ings:[{name:'Pechuga de pollo',qty:'130g'},{name:'Judías verdes',qty:'150g'},{name:'Yogur natural',qty:'3 EL'},{name:'Ajo en polvo',qty:'½ TL'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Cocer judías',text:'Cuece las judías en agua con sal 5 min. Escurre.'},{title:'Pollo y salsa',text:'Cocina el pollo a la plancha 4 min por lado. Mezcla el yogur con ajo y sal. Sirve con las judías y la salsa.'}]},
+    {name:'Ensalada de garbanzos con huevo duro',kcal:310,prep_time:'15 min',ings:[{name:'Garbanzos cocidos',qty:'150g'},{name:'Huevos',qty:'2 ud'},{name:'Espinacas frescas',qty:'50g'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Vinagre',qty:'1 TL'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Cocer huevos',text:'Cuece los huevos 10 min. Enfría y pela.'},{title:'Montar',text:'Mezcla los garbanzos con las espinacas. Añade los huevos en cuartos. Aliña con aceite, vinagre y sal.'}]},
+    {name:'Salmón al horno con judías verdes',kcal:330,prep_time:'20 min',ings:[{name:'Lomo de salmón',qty:'120g'},{name:'Judías verdes',qty:'150g'},{name:'Limón',qty:'½ ud'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Sal y pimienta',qty:'al gusto'}],steps:[{title:'Hornear',text:'Coloca el salmón en bandeja con aceite, limón, sal y pimienta. Hornea 180°C 15 min.'},{title:'Judías',text:'Cuece las judías 5 min en agua con sal. Sirve junto al salmón.'}]},
+    {name:'Bowl de arroz con pollo y calabacín',kcal:370,prep_time:'20 min',ings:[{name:'Arroz',qty:'50g'},{name:'Pechuga de pollo',qty:'120g'},{name:'Calabacín',qty:'½ ud'},{name:'Salsa de soja',qty:'1 EL'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Cocer arroz',text:'Cuece el arroz.'},{title:'Saltear',text:'Saltea el calabacín y el pollo en tiras con aceite 6 min. Añade la soja. Sirve sobre el arroz.'}]},
+    {name:'Frittata de verduras con rúcula',kcal:290,prep_time:'15 min',ings:[{name:'Huevos',qty:'2 ud'},{name:'Calabacín',qty:'½ ud'},{name:'Pimiento rojo',qty:'½ ud'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Rúcula',qty:'1 puñado'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Saltear verduras',text:'Saltea el calabacín y pimiento en dados 3 min con aceite y sal.'},{title:'Cuajar y servir',text:'Bate los huevos con sal, añade las verduras y cuaja a fuego bajo 6 min. Sirve con rúcula.'}]},
+    {name:'Wrap de pavo con aguacate y tomate',kcal:330,prep_time:'10 min',ings:[{name:'Tortilla de trigo',qty:'1 ud'},{name:'Fiambre de pavo',qty:'80g'},{name:'Aguacate',qty:'½ ud'},{name:'Tomate',qty:'½ ud'},{name:'Sal y limón',qty:'al gusto'}],steps:[{title:'Rellenar',text:'Aplasta el aguacate con limón y sal. Unta la tortilla, añade el pavo y el tomate en rodajas. Enrolla.'}]},
+    {name:'Lentejas con comino y zanahoria',kcal:320,prep_time:'20 min',ings:[{name:'Lentejas pardinas',qty:'60g'},{name:'Zanahoria',qty:'1 ud'},{name:'Cebolla',qty:'½ ud'},{name:'Comino',qty:'1 TL'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Sofrito',text:'Sofríe la cebolla y zanahoria con aceite y comino 3 min.'},{title:'Cocer',text:'Añade las lentejas y agua suficiente. Cuece 18 min. Ajusta sal.'}]},
+    {name:'Pasta con salmón y eneldo',kcal:380,prep_time:'15 min',ings:[{name:'Pasta',qty:'55g'},{name:'Salmón ahumado',qty:'80g'},{name:'Queso crema light',qty:'1 EL'},{name:'Eneldo',qty:'al gusto'},{name:'Sal y pimienta',qty:'al gusto'}],steps:[{title:'Cocer pasta',text:'Cuece la pasta y reserva 2 EL del agua de cocción.'},{title:'Montar',text:'Mezcla la pasta caliente con el queso crema, el agua reservada y el salmón en trozos. Añade eneldo y pimienta.'}]},
+    {name:'Ensalada de alubias con atún y cebolla',kcal:300,prep_time:'10 min',ings:[{name:'Alubias blancas cocidas',qty:'150g'},{name:'Atún al natural',qty:'80g'},{name:'Cebolla morada',qty:'¼ ud'},{name:'Perejil fresco',qty:'1 puñado'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Vinagre',qty:'1 TL'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Preparar',text:'Escurre las alubias y el atún. Pica la cebolla fina. Mezcla todo con el perejil, aceite, vinagre y sal.'}]},
+    {name:'Tortilla de champiñones y espinacas',kcal:280,prep_time:'12 min',ings:[{name:'Huevos',qty:'2 ud'},{name:'Champiñones',qty:'120g'},{name:'Espinacas frescas',qty:'50g'},{name:'Aceite de oliva',qty:'1 EL'},{name:'Ajo',qty:'1 diente'},{name:'Sal',qty:'al gusto'}],steps:[{title:'Saltear',text:'Lamina los champiñones y saltea con ajo y aceite 3 min. Añade las espinacas y saltea 1 min más.'},{title:'Cuajar',text:'Bate los huevos con sal, añade las verduras y cuaja 4 min.'}]},
+  ],
+};
+// Ingredientes a evitar por persona
+// Ingredientes a evitar siempre por persona
+const TUPPER_AVOID={
+  p1:['quinoa','alcaparras','crema','hummus','brócoli'],
+};
+
+// Palabras clave de proteína que hay que excluir según la cena
+const PROT_KEYWORDS={
+  huhn:['pollo','pechuga','pavo'],
+  schwein:['cerdo','bacon','panceta','costilla'],
+  rind:['ternera','buey','vacuno'],
+  fisch:['salmón','atún','pescado','merluza','bacalao','sardina','seelachs','dorada'],
+  wurst:['jamón','embutido','chorizo','salchichón','fiambre','longaniza'],
+  veggi:[],
+};
+
+// Tuppers donde se puede añadir brócoli como extra
+const TUPPER_CON_BROCOLI_P1=['Salmón al horno con judías verdes','Bowl de arroz con salmón y edamame',
+  'Bowl de salmón con edamame','Pechuga de pollo con pimientos asados',
+  'Bowl de arroz con pollo al curry','Salmón con espárragos al limón',
+  'Bowl de arroz con pollo al limón','Bowl de arroz con pollo y calabacín',
+  'Bowl de arroz con salmón teriyaki'];
+
+// Pool completo de todos los tuppers (sin duplicados por nombre)
+function getAllTuppers(){
+  const seen=new Set();
+  const all=[];
+  Object.values(TUPPER_DB).forEach(lista=>lista.forEach(t=>{
+    if(!seen.has(t.name)){seen.add(t.name);all.push(t);}
+  }));
+  return all;
+}
+
+// Tuppers usados en los últimos N días hacia atrás desde wo/day
+function getTuppersUsadosUltimoDias(wo,day,dias=10){
+  const usados=new Set();
+  let contador=0;
+  let d=day-1,w=wo;
+  while(contador<dias){
+    if(d<0){d=6;w--;}
+    const l=lunches[lunchKey(w,d)];
+    if(l?.p1)usados.add(l.p1.toLowerCase().trim());
+    d--;contador++;
+  }
+  return usados;
+}
+
+function getPoolTuppers(wo,day,excluirKey=null){
+  const rec=recipes.find(r=>r.wo===wo&&r.day===day);
+  const tipo=rec?rec.type:'veggi';
+  const cenaKcal=rec?getKcal(rec.name)||null:null;
+  const tdee=calcTDEE(userProfile);
+  const totalSinTupper=FIJO+(cenaKcal||0);
+  const margen=tdee-totalSinTupper; // kcal disponibles para el tupper sin pasar TDEE
+
+  // Pool: todos los tuppers menos proteína de la cena y evitados de Nata
+  const protExcluir=PROT_KEYWORDS[tipo]||[];
+  let opciones=getAllTuppers().filter(t=>{
+    const n=t.name.toLowerCase();
+    if(protExcluir.some(p=>n.includes(p)))return false;
+    if(TUPPER_AVOID.p1.some(ev=>n.includes(ev)))return false;
+    return true;
+  });
+
+  // Excluir usados en los 10 días anteriores
+  const usados10=getTuppersUsadosUltimoDias(wo,day,10);
+  const sinHistorico=opciones.filter(t=>!usados10.has(t.name.toLowerCase().trim()));
+  if(sinHistorico.length)opciones=sinHistorico;
+
+  // Excluir usados esta semana
+  const semanaKeys=[0,1,2,3,4,5,6].map(d=>lunchKey(wo,d))
+    .filter(k=>k!==lunchKey(wo,day)&&k!==excluirKey);
+  const usadosSemana=new Set(semanaKeys.map(k=>lunches[k]?.p1||'').filter(Boolean).map(s=>s.toLowerCase().trim()));
+  const sinSemana=opciones.filter(t=>!usadosSemana.has(t.name.toLowerCase().trim()));
+  if(sinSemana.length)opciones=sinSemana;
+
+  // Ordenar: primero los que no pasan el TDEE, por cercanía al margen
+  // Si todos lo pasan, ordenar por kcal ascendente
+  const sinPasar=opciones.filter(t=>t.kcal<=margen);
+  if(sinPasar.length){
+    // Entre los que no pasan, los 3 más cercanos al margen (máximo déficit sin pasarse)
+    opciones=sinPasar.sort((a,b)=>Math.abs(margen-a.kcal)-Math.abs(margen-b.kcal)).slice(0,3);
+  } else {
+    // Todos pasan el TDEE — los 3 más ligeros
+    opciones=[...opciones].sort((a,b)=>a.kcal-b.kcal).slice(0,3);
+  }
+
+  return opciones;
+}
+
+function sugerirTupper(){
+  const {wo,day}=lunchEditState;
+  const opciones=getPoolTuppers(wo,day);
+  if(!opciones.length){showToast('No hay sugerencias disponibles para hoy');return;}
+
+  const elegido=opciones[Math.floor(Math.random()*opciones.length)];
+  
+
+  document.getElementById('lmodalP1').value=elegido.name;
+  
+  
+  document.getElementById('lmodalPrepTime').value=elegido.prep_time||'';
+  renderLingRows('shared', elegido.ings||[]);
+  renderStepRows(elegido.steps||[]);
+  lunchEditState.kcal=elegido.kcal||null;
+
+  const kcalInfo=elegido.kcal?` · ~${elegido.kcal} kcal`:'';
+  showToast(`✨ Sugerido${kcalInfo} — puedes editarlo`);
+}
+
+function sugerirSemanaCompleta(){
+  const dias=[0,1,2,3,4,5,6];
+  let rellenados=0;
+  // Lista de lo que se va asignando esta sesión para no repetir entre días
+  const asignadosEstaSesion=new Set();
+
+  dias.forEach(day=>{
+    if(lunches[lunchKey(wo,day)]?.p1)return; // ya tiene tupper
+    const rec=recipes.find(r=>r.wo===wo&&r.day===day);
+    if(!rec)return; // sin cena ese día, no sugerimos tupper
+
+    let opciones=getPoolTuppers(wo,day);
+    // Excluir también lo asignado en esta misma sesión
+    const sinSesion=opciones.filter(t=>!asignadosEstaSesion.has(t.name.toLowerCase().trim()));
+    if(sinSesion.length)opciones=sinSesion;
+    if(!opciones.length)return;
+
+    const elegido=opciones[Math.floor(Math.random()*opciones.length)];
+    
+    
+
+    lunches[lunchKey(wo,day)]={
+      p1:elegido.name,
+            prep_time:elegido.prep_time||'',
+      ings:elegido.ings||[],
+      steps:elegido.steps||[],
+      kcal:elegido.kcal||null,
+      p2_extra:[],p2_note:'',
+    };
+    asignadosEstaSesion.add(elegido.name.toLowerCase().trim());
+    rellenados++;
+  });
+
+  if(rellenados>0){save();render();showToast(`✨ ${rellenados} tupper${rellenados>1?'s':''} sugeridos`);}
+  else showToast('Todos los días ya tienen tupper o no hay cena');
+}
+
 // TUPPER RECIPE VIEW
 function openTupper(wOff,day){
   const key=lunchKey(wOff,day);
@@ -1761,7 +2029,7 @@ function openTupper(wOff,day){
   const cd=getDayDate(wOff,day);
   const hdr=document.getElementById('tmodalHdr');
   hdr.innerHTML=`<h2>${l.p1||'Comida del mediodía'}</h2>
-    <div class="tsub">${DAYS_F[day]} ${fmt(cd)}${l.prep_time?` · ⏱ ${l.prep_time}`:''}</div>`;
+    <div class="tsub">${DAYS_F[day]} ${fmt(cd)}${l.prep_time?` · ⏱ ${l.prep_time}`:''}${l.p2?` · : ${l.p2}`:''}</div>`;
   // Ingredients
   const ingsEl=document.getElementById('tmodalIngs');
   ingsEl.innerHTML=`<div class="tmodal-section-t">Ingredientes</div>`;
@@ -2082,7 +2350,7 @@ function importHTML(ev){
         if(hdr){['huhn','schwein','fisch','veggi','rind','wurst'].forEach(t=>{if(hdr.className.includes(t))type=t;});}
         else type=guessType(name);
         let time='',kcal='',level='',subtitle='';
-        card.querySelectorAll('.pill').forEach(p=>{const t=p.textContent.trim();if(t.includes('Min'))time=t.replace(/[^0-9Min\s]/g,'').trim();else if(t.includes('kcal'))kcal=t;else if(['Einfach','Mittel','Schwer'].some(l=>t.includes(l)))level=t;});
+        card.querySelectorAll('.pill').forEach(p=>{const t=p.textContent.trim();if(t.includes('Min'))time=t.replace(/[^0-9Min\s]/g,'').trim();else if(t.includes('kcal'))kcal=t;else if(['Fácil','Medio','Schwer'].some(l=>t.includes(l)))level=t;});
         const subEl=card.querySelector('.subtitle');if(subEl)subtitle=subEl.textContent.trim();
         const ings=[];
         card.querySelectorAll('.ing-item').forEach(item=>{
@@ -2375,6 +2643,9 @@ function sumQty(qtys){
 }
 
 function setMode(m){listMode=m;document.getElementById('btnCat').classList.toggle('active',m==='cat');document.getElementById('btnRec').classList.toggle('active',m==='rec');renderList();}
+function setHideChecked(v){hideChecked=v;document.getElementById('btnChkTachar').classList.toggle('active',!v);document.getElementById('btnChkOcultar').classList.toggle('active',v);renderList();}
+function initHideCheckedBtn(){document.getElementById('btnChkTachar').classList.toggle('active',!hideChecked);document.getElementById('btnChkOcultar').classList.toggle('active',hideChecked);}
+function setHideCheckedMl(v){hideCheckedMl=v;document.getElementById('btnMlTachar').classList.toggle('active',!v);document.getElementById('btnMlOcultar').classList.toggle('active',v);renderMobileListPane();}
 function updateWkSel(){listWo=wo;}
 
 function renderList(){
@@ -2508,7 +2779,7 @@ function renderList(){
     const pantryBadge=isPantry?'<span class="ipantry">🏠 despensa</span>':'';
     const toggleBtn=`<button class="pantry-toggle" onclick="togglePantry(event,'${ingKey(item.name)}')">${isPantry?'↑ quitar':'↓ despensa'}</button>`;
     const catBtn=`<button class="pantry-toggle no-print" style="opacity:.4;" onclick="openCatPicker(event,'${ingKey(item.name)}')">📂</button>`;
-    return `<div class="litem${ck?' checked':''}${isPantry?' pantry-item':''}" onclick="toggleChk('${item.id}')">
+    return `<div class="litem${ck?' checked':''}${isPantry?' pantry-item':''}${ck&&hideChecked?' hidden':''}" onclick="toggleChk('${item.id}')">
       <div class="lchk"><span class="chkmark">✓</span></div>
       <span class="iname">${item.name}${qtyDisplay?` <span class="iqty">${qtyDisplay}</span>`:''}</span>
       ${pantryBadge}${pt}${futureTag}${toggleBtn}${catBtn}
@@ -2615,7 +2886,7 @@ function analyzeOffers(){
   Object.values(map).filter(i=>i.weeks.size>1).forEach(i=>{const ws=[...i.weeks].sort().map(w=>`Sem. ${getKW(getMon(w))}`).join(', ');shared.push(`${i.name} (${ws})`);});
   const ao=offers.filter(o=>{if(!o.until)return true;return new Date(o.until)>=new Date();}).map(o=>`${o.product}: ${OL[o.type]}`+(o.until?` hasta ${new Date(o.until).toLocaleDateString('es-ES')}`:'')).join('; ');
   let msg='Soy tu asistente MartaFresh. ';
-  if(ao)msg+=`Ofertas activas en Carrefour: ${ao}. `;
+  if(ao)msg+=`Ofertas activas: ${ao}. `;
   if(shared.length)msg+=`Ingredientes que se repiten entre semanas: ${shared.join('; ')}. `;
   msg+='¿Cómo puedo aprovechar mejor estas ofertas teniendo en cuenta la caducidad típica?';
   if(typeof sendPrompt==='function')sendPrompt(msg);else alert(msg);
@@ -2624,7 +2895,7 @@ function analyzeOffers(){
 // PRICES
 function importIngsFromPlan(){
   let added=0;
-  recipes.forEach(r=>r.ings.forEach(ing=>{const _n=iN(ing);const k=ingKey(_n);if(!prices[k]){prices[k]={name:_n,pack:null,carrefour:null,mercadona:null,lidl:null,consum:null};added++;}}));
+  recipes.forEach(r=>r.ings.forEach(ing=>{const _n=iN(ing);const k=ingKey(_n);if(!prices[k]){prices[k]={name:_n,pack:null,gadis:null,alimerka:null,froiz:null};added++;}}));
   save();renderPreise();
   showToast(added?`${added} ingredientes importados del plan`:'Todos los ingredientes ya están en la lista');
 }
@@ -2635,7 +2906,7 @@ function importIngsFromLunches(){
     [...(l.ings||[]),(l.p2_extra||[])].forEach(ing=>{
       if(!ing.name)return;
       const k=ingKey(ing.name);
-      if(!prices[k]){prices[k]={name:ing.name,pack:null,carrefour:null,mercadona:null,lidl:null,consum:null};added++;}
+      if(!prices[k]){prices[k]={name:ing.name,pack:null,gadis:null,alimerka:null,froiz:null};added++;}
     });
   });
   save();renderPreise();
@@ -2644,13 +2915,13 @@ function importIngsFromLunches(){
 function addIngredientRow(){document.getElementById('addIngRow').style.display='flex';document.getElementById('newIngName').focus();}
 function cancelAddIng(){
   document.getElementById('addIngRow').style.display='none';
-  ['newIngName','newIngCarrefour','newIngMercadona','newIngLidl','newIngConsum','newIngPack'].forEach(id=>document.getElementById(id).value='');
+  ['newIngName','newIngGadis','newIngAlimerka','newIngFroiz','newIngPack'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('newIngUnit').value='100g';
 }
 function confirmAddIng(){
   const name=document.getElementById('newIngName').value.trim();if(!name)return;
   const k=ingKey(name);
-  prices[k]={name,pack:document.getElementById('newIngPack').value.trim()||null,carrefour:parseFloat(document.getElementById('newIngCarrefour').value)||null,mercadona:parseFloat(document.getElementById('newIngMercadona').value)||null,lidl:parseFloat(document.getElementById('newIngLidl').value)||null,consum:parseFloat(document.getElementById('newIngConsum').value)||null};
+  prices[k]={name,pack:document.getElementById('newIngPack').value.trim()||null,gadis:parseFloat(document.getElementById('newIngGadis').value)||null,alimerka:parseFloat(document.getElementById('newIngAlimerka').value)||null,froiz:parseFloat(document.getElementById('newIngFroiz').value)||null};
   save();cancelAddIng();renderPreise();showToast('Ingrediente añadido');
 }
 function updatePrice(key,s,val){if(!prices[key])return;prices[key][s]=val===''||isNaN(parseFloat(val))?null:parseFloat(parseFloat(val).toFixed(2));save();updatePriceSummary();highlightCheapest();}
@@ -2737,7 +3008,7 @@ function highlightCheapest(){
 }
 
 function updatePriceSummary(){
-  const totals={carrefour:0,mercadona:0,lidl:0,consum:0};const counts={carrefour:0,mercadona:0,lidl:0,consum:0};
+  const totals={gadis:0,alimerka:0,froiz:0};const counts={gadis:0,alimerka:0,froiz:0};
   // Solo ingredientes que NO son despensa para el total
   Object.entries(prices).forEach(([k,p])=>{
     if(pantry.has(k))return;
@@ -2782,7 +3053,7 @@ function importData(ev){
       weightLog=parsed.weightLog||{};leftovers=parsed.leftovers||{};
       cheatDays=parsed.cheatDays||{};catOverrides=parsed.catOverrides||{};
       save(); // Guardar en Supabase
-      load();initShopDayControls();render();
+      load();initShopDayControls();initHideCheckedBtn();render();
       if(document.getElementById('pane-list').classList.contains('active')){renderShopDay();renderList();}
       if(document.getElementById('pane-offers').classList.contains('active'))renderOffers();
       if(document.getElementById('pane-preise').classList.contains('active'))renderPreise();
@@ -3001,8 +3272,10 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif
 </head>
 <body>
 <div class="sticky-hdr">
-  <div style="font-size:20px;font-weight:700;"><img src="/shoppingbag.png" style="width:28px;height:28px;object-fit:contain;"/>
-      Lista de la compra</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;">
+    <div style="font-size:20px;font-weight:700;">🛒 Lista de la compra</div>
+    <button id="hideDoneBtn" onclick="toggleHideDone()" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:white;padding:6px 12px;border-radius:20px;font-size:13px;cursor:pointer;font-family:inherit;">🙈 Ocultar</button>
+  </div>
   <div style="font-size:13px;margin-top:4px;opacity:.9;" id="hdrStats">${totalItems} artículos · <span id="budgetDisplay">~${staticBudget} €</span> · ${pantryUnchecked.length} despensa</div>
   <div style="font-size:11px;margin-top:2px;opacity:.65;">MartaFresh · ${dateStr}</div>
 </div>
@@ -3032,9 +3305,20 @@ function recalcBudget(){
 }
 
 function toggleItem(id,el){
-  if(checkedSet.has(id)){checkedSet.delete(id);el.classList.remove('checked');el.querySelector('.chk-icon').textContent='☐';}
-  else{checkedSet.add(id);el.classList.add('checked');el.querySelector('.chk-icon').textContent='✓';}
+  if(checkedSet.has(id)){checkedSet.delete(id);el.classList.remove('checked');if(hidingDone)el.style.display='';}
+  else{
+    checkedSet.add(id);el.classList.add('checked');el.querySelector('.chk-icon').textContent='✓';
+    if(hidingDone)setTimeout(()=>{el.style.display='none';},350);
+  }
   recalcBudget();
+}
+
+let hidingDone=false;
+function toggleHideDone(){
+  hidingDone=!hidingDone;
+  const btn=document.getElementById('hideDoneBtn');
+  btn.textContent=hidingDone?'👁 Mostrar':'🙈 Ocultar';
+  document.querySelectorAll('.item.checked').forEach(el=>el.style.display=hidingDone?'none':'');
 }
 
 let manualCount=0;
@@ -3057,9 +3341,13 @@ function addManual(){
 function resetAll(){
   if(!confirm('¿Restablecer toda la lista?'))return;
   checkedSet.clear();
-  document.querySelectorAll('.item.checked').forEach(el=>{el.classList.remove('checked');el.querySelector('.chk-icon').textContent=el.classList.contains('pantry-item')?'☐':'☐';});
-  // Mostrar items ocultos manualmente (por si acaso)
-  document.querySelectorAll('.item').forEach(el=>el.style.display='');
+  document.querySelectorAll('.item').forEach(el=>{
+    el.classList.remove('checked');
+    el.style.display='';
+    el.querySelector('.chk-icon').textContent='☐';
+  });
+  hidingDone=false;
+  document.getElementById('hideDoneBtn').textContent='🙈 Ocultar';
   recalcBudget();
 }
 <\/script>
@@ -3368,11 +3656,11 @@ function renderHoy(){
     html+=`<div class="hoy-card cena" onclick="openCookRecipe()" style="border-top:3px solid ${col.mid};">
       <div class="hoy-card-icon" style="background:var(--light);"><img src="/icon-cena.png" style="width:56px;height:56px;object-fit:contain;"/></div>
       <div class="hoy-card-name">${todayRec.name}</div>
-      <div class="hoy-card-meta">${todayRec.time||''}${kcalRec&&kcalRec!=='—'?' · '+kcalRec+' kcal':''}</div>
+      <div class="hoy-card-meta">${todayRec.time||''}${kcalRec&&kcalRec!=='—'?' · '+String(kcalRec).replace(/\s*kcal/i,'').trim()+' kcal':''}</div>
     </div>`;
   } else {
     html+=`<div class="hoy-card cena" style="opacity:.5;cursor:default;">
-      <div class="hoy-card-icon" style="background:var(--light);"><img src="/icon-cena.png" style="width:56px;height:56px;object-fit:contain;"/></div>
+      <div class="hoy-card-icon">🍽️</div>
       <div class="hoy-card-name">Sin receta hoy</div>
       <div class="hoy-card-meta">—</div>
     </div>`;
@@ -3493,6 +3781,7 @@ function handleShopBtn(){
 // Uses global `checked` object (same keys as desktop list) + mlExtra for manual items
 let mlExtra=[]; // {name, qty}
 let _mlSyncInterval=null;
+let hideCheckedMl=false;
 let _mlLastCheckedStr='';
 let _mlDays=7; // days selected from shop dialog
 
@@ -3575,7 +3864,7 @@ function renderMobileListPane(){
     const pending=items.filter(i=>!checked[i.id]);
     const doneItems=items.filter(i=>!!checked[i.id]);
     html+=`<div class="mlist-pcat">${emoji} ${cat}</div>`;
-    [...pending,...doneItems].forEach(item=>{
+    [...pending,...(hideCheckedMl?[]:doneItems)].forEach(item=>{
       const ck=!!checked[item.id];
       const qty=sumQty(item.qtys);
       let qtyDisplay=qty||'';
@@ -3599,6 +3888,7 @@ function renderMobileListPane(){
     html+=`<div class="mlist-pcat">🏠 Despensa (verificar)</div>`;
     pantryItems.forEach(item=>{
       const ck=!!checked[item.id];
+      if(hideCheckedMl&&ck)return;
       const qty=sumQty(item.qtys);
       html+=`<div class="mlist-pitem pantry-row${ck?' done':''}" onclick="mpToggle('${item.id}')">
         <div class="mlist-pchk"><span class="mlist-pchk-mark">✓</span></div>
@@ -3609,6 +3899,8 @@ function renderMobileListPane(){
   }
 
   document.getElementById('mpBody').innerHTML=html;
+  document.getElementById('btnMlTachar').classList.toggle('active',!hideCheckedMl);
+  document.getElementById('btnMlOcultar').classList.toggle('active',hideCheckedMl);
 }
 
 function mpToggle(id){
@@ -3840,7 +4132,20 @@ const KCAL_DB={
   'Bio-Rinderhüftsteak mit feiner Bärlauch-Crème':769,
   'Cajun-Chicken mit Salat in Buttermilch-Dressing':705,
   'Chicken Bites mit Süßkartoffel-Bohnen-Salat':821,
-  'Marry-Me-Chicken in sahniger Soße':602,
+  'Marry-Me-Chicken in sahniger Soße':612,
+  // KW19
+  'Hüftsteak vom Weiderind in Champignon-Soße':681,
+  'Käsespätzlepfanne mit Schweinelachssteak':1401,
+  'Seelachs aus der Pfanne in frischem Zitronenöl':577,
+  'Tijuana-Caesar Salad mit Bacon, dazu eine Limo':796,
+  'New York Chicken Fingers mit Tomatendip':949,
+  'Spaghetti mit Pilzrahm-Soße':888,
+  // KW20 (próxima semana — añadir cuando se procesen los PDFs)
+  'Rheinischer Eintopf mit Hackfleisch vom Weiderind':850,
+  'Tropische Salat-Bowl mit Süßkartoffel':720,
+  'Weißer Spargel mit Hollandaise und Krustenschinken':780,
+  'Hähnchenbrust im Knuspermantel':820,
+  'Honig-Senf-Hähnchensalat mit Avocado':650,
 };
 function getKcal(name){
   // Primero recipeData (importado desde HTML), luego KCAL_DB hardcoded
@@ -3852,25 +4157,109 @@ function getKcal(name){
 // Tupper kcal estimates by type of dish
 function estimateLunchKcal(l){
   if(!l)return null;
+  if(l.kcal)return l.kcal; // usar kcal guardado (de la biblioteca) si existe
   const n=(l.p1||'').toLowerCase();
-  if(n.includes('pasta')&&n.includes('mozzarella'))return 500;
-  if(n.includes('pasta'))return 480;
-  if(n.includes('arroz'))return 480;
-  if(n.includes('wrap')||n.includes('tortilla integral'))return 450;
-  if(n.includes('tortilla')&&n.includes('huevo'))return 350;
-  if(n.includes('garbanzos'))return 360;
-  if(n.includes('lentejas'))return 350;
-  if(n.includes('salmón ahumado'))return 370;
-  if(n.includes('ensalada')&&n.includes('atún'))return 340;
-  if(n.includes('atún'))return 350;
-  if(n.includes('pechuga')||n.includes('pollo'))return 380;
+  if(n.includes('pasta')&&n.includes('mozzarella'))return 420;
+  if(n.includes('pasta'))return 390;
+  if(n.includes('arroz'))return 380;
+  if(n.includes('wrap')||n.includes('tortilla integral'))return 350;
+  if(n.includes('tortilla')&&n.includes('huevo'))return 300;
+  if(n.includes('garbanzos'))return 310;
+  if(n.includes('lentejas'))return 320;
+  if(n.includes('salmón ahumado'))return 280;
+  if(n.includes('ensalada')&&n.includes('atún'))return 290;
+  if(n.includes('atún'))return 300;
+  if(n.includes('pechuga')||n.includes('pollo'))return 300;
   if(n.includes('pavo'))return 330;
-  return 380; // generic
+  return 340; // generic
 }
 
-const FIJO=550; // kcal fijas diarias (desayuno + snacks) — configurable en Preferencias
-const OBJETIVO=1500; // objetivo kcal diario — configurable en Preferencias
+let userProfile={nombre:'Marta',edad:30,peso:65,altura:165,actividad:'sedentaria',deficit:350,kcalFijas:550};
+let FIJO=595,OBJETIVO=1550;
+function calcTDEE(p){const bmr=10*p.peso+6.25*p.altura-5*p.edad-161;const f={sedentaria:1.2,ligera:1.375,moderada:1.55}[p.actividad]||1.2;return Math.round(bmr*f);}
+function updateProfileConstants(){FIJO=userProfile.kcalFijas||595;OBJETIVO=calcTDEE(userProfile)-(userProfile.deficit||400);}
 const DAYS_F_SHORT=['Lu','Ma','Mi','Ju','Vi','Sá','Do'];
+
+function getMotivationalMessage({exceso,gPerSemana,perdiendo,dayData,known,anWo,kw,tdee}){
+  if(exceso===null||known.length<3)return null; // no hay suficientes datos
+  if(!perdiendo&&exceso>150)return null; // semana mala → silencio total
+
+  // Calcular racha de semanas por debajo del objetivo
+  let racha=0;
+  for(let w=anWo;w>=anWo-8;w--){
+    const wRecs=recipes.filter(r=>r.wo===w);
+    const wDays=[];
+    for(let d=0;d<7;d++){
+      const r=wRecs.find(x=>x.day===d);const l=lunches[lunchKey(w,d)]||null;
+      const ck=r?getKcal(r.name)||null:null;const tk=estimateLunchKcal(l);
+      const tot=(ck||tk)?FIJO+(tk||0)+(ck||0):null;
+      if(tot)wDays.push(tot);
+    }
+    if(!wDays.length)break;
+    const wMedia=wDays.reduce((s,v)=>s+v,0)/wDays.length;
+    if(wMedia-OBJETIVO<=0)racha++;
+    else break;
+  }
+
+  // Peso perdido total (desde weightLog)
+  const allWeights=Object.values(weightLog).map(l=>l.weight).filter(Boolean).sort((a,b)=>a-b);
+  const pesoInicio=userProfile.peso;
+  const pesoActual=allWeights.length?allWeights[allWeights.length-1]:null;
+  const totalPerdido=pesoActual?Math.round((pesoInicio-pesoActual)*10)/10:null;
+
+  // Día mejor de la semana (menos kcal)
+  const mejorDia=dayData.filter(x=>x.total&&x.total<OBJETIVO).sort((a,b)=>a.total-b.total)[0];
+  const DAYS_ESP=['lunes','martes','miércoles','jueves','viernes','sábado','domingo'];
+
+  // Ciclo esta semana
+  const wkKey=`${kw}_${getMon(anWo).getFullYear()}`;
+  const esCiclo=cycleWeeks.has(wkKey);
+
+  // Pool de mensajes según contexto
+  const msgs=[];
+
+  if(esCiclo&&perdiendo){
+    msgs.push(`💧 Semana con ciclo y aun así por debajo del objetivo. Eso es disciplina de verdad.`);
+    msgs.push(`💧 Con ciclo y sin excusas — ${gPerSemana}g menos esta semana. El cuerpo manda pero tú mandas más.`);
+  }
+
+  if(racha>=3){
+    msgs.push(`🔥 ${racha} semanas seguidas por debajo del objetivo. La constancia es lo que funciona.`);
+    msgs.push(`✨ Llevas ${racha} semanas en racha — eso ya no es suerte, es hábito.`);
+  }
+
+  if(totalPerdido&&totalPerdido>0){
+    msgs.push(`📉 ${totalPerdido} kg menos desde que empezaste. Cada semana suma.`);
+    if(totalPerdido>=1)msgs.push(`🎉 Ya van ${totalPerdido} kg — lo que pesa medio kilo de mantequilla, pero en grasa real.`);
+    if(totalPerdido>=2)msgs.push(`💪 ${totalPerdido} kg perdidos. Sigue así y en unos meses no te lo vas a creer.`);
+  }
+
+  if(perdiendo&&gPerSemana>100){
+    msgs.push(`📊 A este ritmo, ~${gPerSemana}g menos esta semana. Pequeño pero real.`);
+    msgs.push(`⚡ ${gPerSemana}g esta semana. No se nota en el espejo todavía, pero la báscula no miente.`);
+  }
+
+  if(mejorDia){
+    const recNombre=mejorDia.rec?mejorDia.rec.name.split(' ').slice(0,3).join(' '):'';
+    msgs.push(`✅ El ${DAYS_ESP[mejorDia.day]} fue perfecto${recNombre?' ('+recNombre+')':''}. Así es como se hace.`);
+  }
+
+  if(exceso<=-200){
+    msgs.push(`🟢 Muy por debajo del objetivo esta semana. Tu cuerpo lo está notando aunque aún no lo veas.`);
+    msgs.push(`💚 Semana excelente — ${Math.abs(Math.round(exceso))} kcal de sobra al día. Sin pasarte, sin quedarte corta.`);
+  }
+
+  // Fallback genérico positivo
+  msgs.push(`✨ Semana por debajo del objetivo. Exactamente lo que toca.`);
+  msgs.push(`🟢 Va bien. Sigue así.`);
+
+  // Elegir uno al azar del pool relevante
+  const msg=msgs[Math.floor(Math.random()*Math.min(msgs.length,4))];
+
+  return `<div style="background:linear-gradient(135deg,#e8f5e9,#f1f8e9);border-radius:12px;padding:14px 18px;margin-bottom:14px;border-left:4px solid #2e6b30;">
+    <div style="font-size:14px;font-weight:600;color:#1a4020;line-height:1.5;">${msg}</div>
+  </div>`;
+}
 
 function renderAnalisis(){
   const mon=getMon(anWo);const sun=getDayDate(anWo,6);
@@ -3878,6 +4267,7 @@ function renderAnalisis(){
   document.getElementById('anWeekLabel').textContent=`Semana ${kw} · ${fmt(mon)} – ${fmt(sun)}`;
 
   const weekRecs=recipes.filter(r=>r.wo===anWo).sort((a,b)=>a.day-b.day);
+  const tdee=calcTDEE(userProfile);
 
   // ── Caloric data per day ──
   const dayData=[];
@@ -3885,377 +4275,354 @@ function renderAnalisis(){
     const rec=weekRecs.find(r=>r.day===d);
     const lkey=lunchKey(anWo,d);
     const l=lunches[lkey]||null;
-    const srcKey=`${anWo}_${d}`;
-    const lSrcKey=`lunch_${anWo}_${d}`;
-    const srcLeftover=leftovers[srcKey]; // recipe leftover this day
-    const lunchSrcLeftover=leftovers[lSrcKey]; // tupper leftover this day
+    const srcLeftover=leftovers[`${anWo}_${d}`];
+    const lunchSrcLeftover=leftovers[`lunch_${anWo}_${d}`];
     const isTarget=Object.entries(leftovers).find(([k,lv])=>!lv.isLunch&&lv.targetWo===anWo&&lv.targetDay===d);
     const lunchIsTarget=Object.entries(leftovers).find(([k,lv])=>lv.isLunch&&lv.targetWo===anWo&&lv.targetDay===d);
     let cenaKcal=rec?getKcal(rec.name)||null:null;
     let tupperKcal=estimateLunchKcal(l);
-    // Adjust recipe leftovers
     if(cenaKcal&&srcLeftover)cenaKcal=Math.round(cenaKcal*(1-srcLeftover.fraction));
-    if(isTarget){
-      const [srcK,srcLv]=isTarget;
-      const srcRec=recipes.find(x=>x.id===srcLv.recipeId);
-      const srcKcal=srcRec?getKcal(srcRec.name)||null:null;
-      if(srcKcal)cenaKcal=Math.round(srcKcal*srcLv.fraction);
-    }
-    // Adjust lunch leftovers
+    if(isTarget){const [,srcLv]=isTarget;const srcRec=recipes.find(x=>x.id===srcLv.recipeId);const srcKcal=srcRec?getKcal(srcRec.name)||null:null;if(srcKcal)cenaKcal=Math.round(srcKcal*srcLv.fraction);}
     if(tupperKcal&&lunchSrcLeftover)tupperKcal=Math.round(tupperKcal*(1-lunchSrcLeftover.fraction));
-    if(lunchIsTarget){
-      const [lSrcK,lSrcLv]=lunchIsTarget;
-      const [,lSrcWo,lSrcDay]=lSrcK.split('_').map(Number);
-      const srcL=lunches[lunchKey(lSrcWo,lSrcDay)]||null;
-      const srcLunchKcal=estimateLunchKcal(srcL);
-      if(srcLunchKcal)tupperKcal=Math.round(srcLunchKcal*lSrcLv.fraction);
-    }
+    if(lunchIsTarget){const [lSrcK,lSrcLv]=lunchIsTarget;const [,lSrcWo,lSrcDay]=lSrcK.split('_').map(Number);const srcL=lunches[lunchKey(lSrcWo,lSrcDay)]||null;const srcLunchKcal=estimateLunchKcal(srcL);if(srcLunchKcal)tupperKcal=Math.round(srcLunchKcal*lSrcLv.fraction);}
     const cheatKcal=cheatDays[`${anWo}_${d}`]||0;
     const total=(cenaKcal||tupperKcal)?FIJO+(tupperKcal||0)+(cenaKcal||0)+cheatKcal:null;
-    const isPartial=total!==null&&(!cenaKcal||!tupperKcal);
-    dayData.push({day:d,rec,l,cenaKcal,tupperKcal,total,isPartial,cheatKcal});
+    dayData.push({day:d,rec,l,cenaKcal,tupperKcal,total,cheatKcal,hasData:!!(cenaKcal||tupperKcal)});
   }
 
   const known=dayData.filter(x=>x.total!==null);
   const media=known.length?Math.round(known.reduce((s,x)=>s+x.total,0)/known.length):null;
-  const deficit=media?OBJETIVO-media:null;
-  const mediaClass=deficit===null?'':deficit>=-50?'good':deficit>=-200?'warn':'bad';
+  const exceso=media!==null?media-OBJETIVO:null;
+  const excesoTDEE=media!==null?media-tdee:null;
+  const gPerSemana=excesoTDEE!==null?Math.round(Math.abs(excesoTDEE)*7/7700*1000):null;
+  const perdiendo=excesoTDEE!==null&&excesoTDEE<0;
+  const maxKcal=Math.max(tdee+300,...dayData.filter(x=>x.total).map(x=>x.total));
 
-  // ── Protein distribution (whole DB) ──
-  const protCount={huhn:0,schwein:0,rind:0,fisch:0,veggi:0,wurst:0};
-  recipes.forEach(r=>{if(protCount[r.type]!==undefined)protCount[r.type]++;});
-  const protTotal=Object.values(protCount).reduce((s,v)=>s+v,0)||1;
-  const protLabels={huhn:'Pollo/Geflügel',schwein:'Cerdo',rind:'Ternera',fisch:'Pescado',veggi:'Vegetariano',wurst:'Embutido'};
-
-  // ── Supermarket best ──
-  const superTotals={carrefour:0,mercadona:0,lidl:0,consum:0};
-  const superCounts={carrefour:0,mercadona:0,lidl:0,consum:0};
-  Object.values(prices).forEach(pe=>{
-    SUPERS.forEach(s=>{if(pe[s]!==null&&pe[s]!==undefined){superTotals[s]+=pe[s];superCounts[s]++;}});
-  });
-  const superHasData=Object.values(superCounts).some(v=>v>0);
-  const superAvgs={};
-  SUPERS.forEach(s=>{superAvgs[s]=superCounts[s]>0?superTotals[s]/superCounts[s]:null;});
-  const minAvg=superHasData?Math.min(...SUPERS.filter(s=>superAvgs[s]!==null).map(s=>superAvgs[s])):null;
-
-  // ── MAX for bar scale ──
-  const maxKcal=Math.max(2600,...dayData.filter(x=>x.total).map(x=>x.total));
-
-  // ── HTML ──
   let html='';
 
-  // Summary stats
-  html+=`<div class="an-stats">
-    <div class="an-stat">
-      <div class="asv">${FIJO}</div><div class="asl">kcal fijas/día</div>
-    </div>
-    <div class="an-stat ${mediaClass}">
-      <div class="asv">${media||'—'}</div><div class="asl">Media diaria</div>
-    </div>
-    <div class="an-stat ${deficit===null?'':deficit>0?'good':deficit>-100?'warn':'bad'}">
-      <div class="asv">${deficit===null?'—':(deficit>0?'+':'')+deficit}</div><div class="asl">Déficit medio</div>
-    </div>
-    <div class="an-stat">
-      <div class="asv">${OBJETIVO}</div><div class="asl">Objetivo kcal</div>
-    </div>
-  </div>`;
+  // ── MENSAJE MOTIVACIONAL ──
+  const msgHtml=getMotivationalMessage({exceso,gPerSemana,perdiendo,dayData,known,anWo,kw,tdee});
+  if(msgHtml)html+=msgHtml;
 
-  // Caloric bars
-  html+=`<div class="an-grid">
-  <div class="an-card full">
-    <div class="an-hdr"><span class="an-title">📊 Análisis calórico diario</span><span class="an-sub">Semana ${kw}</span></div>
+  // ── BLOQUE 1: ¿Voy bien esta semana? ──
+  // Semáforo basado en TDEE (el techo real), no en el objetivo de déficit
+  const bajotdee=excesoTDEE!==null&&excesoTDEE<0;
+  const semaforo=excesoTDEE===null?null:excesoTDEE<=-100?'🟢 Por debajo del techo':excesoTDEE<=0?'🟡 Rozando el techo':'🔴 Por encima del techo';
+  const semaforoColor=excesoTDEE===null?'var(--muted)':excesoTDEE<=-100?'#2e6b30':excesoTDEE<=0?'#e0a830':'#e05050';
+
+  html+=`<div class="an-card full" style="margin-bottom:14px;">
+    <div class="an-hdr"><span class="an-title">🎯 ¿Voy bien esta semana?</span><span class="an-sub">Sem. ${kw} · ${known.length}/7 días con datos</span></div>
     <div class="an-body">`;
-  const objPct=(OBJETIVO/maxKcal)*100;
-  dayData.forEach(({day,rec,l,cenaKcal,tupperKcal,total,isPartial,cheatKcal})=>{
-    const lbl=DAYS_F_SHORT[day];
-    const pct=total?Math.min((total/maxKcal)*100,100):0;
-    const estado=total===null?'❓':cheatKcal?'🍕':total<=OBJETIVO+50?'✅':total<=OBJETIVO+250?'⚠️':'❌';
-    const color=total===null?'#ddd':cheatKcal?'#e05050':total<=OBJETIVO+50?'#6db870':total<=OBJETIVO+250?'#e0a830':'#e05050';
-    const cenaStr=rec?(cenaKcal?`${rec.name.split(' ')[0]} ${cenaKcal}kcal`:`${rec.name.split(' ')[0]} ?kcal`):'Sin cena';
-    const tupStr=l?(tupperKcal?`Tupper ~${tupperKcal}kcal`:'Tupper —'):'Sin tupper';
-    const cheatStr=cheatKcal?` + 🍕 +${cheatKcal}kcal`:'';
-    const partialMark=isPartial?'~':'';
-    html+=`<div class="day-bar-row">
-      <span class="day-bar-lbl">${lbl}</span>
-      <div style="flex:1;">
-        <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">${cenaStr} · ${tupStr}${cheatStr}</div>
-        <div class="day-bar-wrap">
-          <div class="day-bar-fill" style="width:${pct}%;background:${color};${isPartial?'opacity:.6':''}"></div>
-          <div class="day-bar-obj" style="left:${objPct}%;"></div>
-        </div>
+
+  if(media===null){
+    html+=`<div class="an-empty">Añade recetas y tuppers para ver el análisis calórico.</div>`;
+  } else {
+    // Titular: margen respecto al TDEE (positivo = bien, negativo = pasado)
+    const margenTDEE=Math.round(tdee-media);
+    const titularLabel=margenTDEE>=0
+      ?`${margenTDEE} kcal/día de margen`
+      :`${Math.abs(margenTDEE)} kcal/día sobre el techo`;
+    const titularColor=margenTDEE>=100?'#2e6b30':margenTDEE>=0?'#e0a830':'#e05050';
+    // Secundario: déficit respecto al objetivo
+    const deficitObj=Math.round(OBJETIVO-media);
+    const deficitLabel=deficitObj>=0
+      ?`Déficit de ${deficitObj} kcal/día respecto al objetivo (${OBJETIVO} kcal)`
+      :`${Math.abs(deficitObj)} kcal/día por encima del objetivo (${OBJETIVO} kcal)`;
+
+    html+=`<div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:16px;">
+      <div>
+        <div style="font-size:28px;font-weight:700;font-family:'Lora',serif;color:${titularColor};">${titularLabel}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">${deficitLabel} · Media ${Math.round(media)} kcal · TDEE ${tdee} kcal</div>
       </div>
-      <span class="day-bar-val">${total?partialMark+total+' kcal':'—'}</span>
-      <span class="day-bar-state">${estado}</span>
+      <div style="background:${semaforoColor}18;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;color:${semaforoColor};">${semaforo}</div>
+      ${gPerSemana!==null?`<div style="font-size:13px;color:${perdiendo?'#2e6b30':'#e05050'};font-weight:600;">→ ~${gPerSemana}g ${perdiendo?'perdidos esta semana ✓':'ganados esta semana'}</div>`:''}
     </div>`;
-  });
-  if(known.length<dayData.filter(x=>x.rec||x.l).length){
-    html+=`<div class="an-note">~ = estimación parcial (solo cena o solo tupper disponible). 🍕 = cheat day (+1.000 kcal). Línea roja = objetivo ${OBJETIVO} kcal.</div>`;
-  }
-  html+=`</div></div></div>`;
 
-  // Protein + supermarket row
-  html+=`<div class="an-grid">
-  <div class="an-card">
-    <div class="an-hdr"><span class="an-title">🥩 Distribución de proteínas</span><span class="an-sub">${recipes.length} recetas totales</span></div>
-    <div class="an-body">`;
-  if(protTotal>0){
-    const PROT_C={huhn:C.huhn.mid,schwein:C.schwein.mid,rind:C.rind.mid,fisch:C.fisch.mid,veggi:C.veggi.mid,wurst:C.wurst.mid};
-    // SVG donut
-    const r=40,cx=50,cy=50,stroke=18;
-    const circ=2*Math.PI*r;
-    let offset=0;
-    let slices='';
-    Object.entries(protCount).filter(([,v])=>v>0).forEach(([k,v])=>{
-      const pct=v/protTotal;
-      const dash=pct*circ;
-      const gap=circ-dash;
-      slices+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${PROT_C[k]}" stroke-width="${stroke}"
-        stroke-dasharray="${dash.toFixed(1)} ${gap.toFixed(1)}"
-        stroke-dashoffset="${(-offset*circ).toFixed(1)}"
-        transform="rotate(-90 ${cx} ${cy})"/>`;
-      offset+=pct;
+    // Barras por día — verde solo si estás por debajo del objetivo
+    dayData.forEach(({day,rec,l,cenaKcal,tupperKcal,total,cheatKcal})=>{
+      const lbl=DAYS_F_SHORT[day];
+      const pct=total?Math.min((total/maxKcal)*100,100):0;
+      const objPct=(OBJETIVO/maxKcal)*100;
+      const tdeePct=(tdee/maxKcal)*100;
+      const dayExceso=total?total-OBJETIVO:null;
+      const over=dayExceso!==null&&dayExceso>0;
+      const color=!total?'#e0ddd8':cheatKcal?'#e05050':total<=tdee?'#6db870':total<=tdee*1.1?'#e0a830':'#e05050';
+      const cenaStr=rec?(cenaKcal?`${rec.name.split(' ').slice(0,2).join(' ')} (${cenaKcal})`:'cena sin kcal'):'sin cena';
+      const tupStr=l?(tupperKcal?`tupper ~${tupperKcal}`:'tupper —'):'sin tupper';
+      html+=`<div class="day-bar-row" style="${over?'background:#fff8f8;border-radius:6px;padding:2px 4px;margin:0 -4px;':''}">
+        <span class="day-bar-lbl" style="font-weight:${over?'700':'400'}">${lbl}</span>
+        <div style="flex:1;">
+          <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">${cenaStr} · ${tupStr}${cheatKcal?' · 🍕':''}${!total?' · sin datos':''}</div>
+          <div class="day-bar-wrap">
+            <div class="day-bar-fill" style="width:${pct}%;background:${color};"></div>
+            <div class="day-bar-obj" style="left:${objPct}%;"></div>
+            <div class="day-bar-tdee" style="left:${tdeePct}%;"></div>
+          </div>
+        </div>
+        <span class="day-bar-val" style="color:${color};font-weight:${over?'700':'400'}">${total?total+' kcal':'—'}</span>
+      </div>`;
     });
-    html+=`<div class="prot-grid">
-      <svg class="prot-donut" width="100" height="100" viewBox="0 0 100 100">${slices}</svg>
-      <div class="prot-legend">`;
-    Object.entries(protCount).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{
-      html+=`<div class="prot-legend-row">
-        <div class="prot-dot" style="background:${PROT_C[k]};"></div>
-        <span>${protLabels[k]}</span>
-        <span class="prot-pct">${Math.round(v/protTotal*100)}%</span>
+    html+=`<div class="an-note" style="margin-top:8px;">🟢 Por debajo del TDEE · 🟡 Hasta +10% del TDEE (${Math.round(tdee*1.1)} kcal) · 🔴 Más de +10% · <span style="border-bottom:2px dashed #e0a830;padding-bottom:1px;">┅</span> Objetivo ${OBJETIVO} kcal · <span style="color:#c0392b;">│</span> TDEE ${tdee} kcal</div>`;
+  }
+  html+=`</div></div>`;
+
+  // ── BLOQUE 2: ¿Dónde está el problema? ──
+  const diasProblema=dayData.filter(x=>x.total&&x.total>tdee).sort((a,b)=>b.total-a.total);
+  if(diasProblema.length){
+    html+=`<div class="an-card full" style="margin-bottom:14px;">
+      <div class="an-hdr"><span class="an-title">⚠️ Días por encima del TDEE</span><span class="an-sub">${diasProblema.length} día${diasProblema.length>1?'s':''} sin déficit (TDEE: ${tdee} kcal)</span></div>
+      <div class="an-body">`;
+    diasProblema.forEach(({day,rec,cenaKcal,tupperKcal,total})=>{
+      const exc=total-tdee;
+      const culpable=cenaKcal&&cenaKcal>700?'La cena es pesada':tupperKcal&&tupperKcal>450?'El tupper es alto':'Combinación cena+tupper';
+      html+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-light);">
+        <span style="font-weight:700;width:28px;">${DAYS_F_SHORT[day]}</span>
+        <span style="flex:1;font-size:12px;color:var(--muted);">${culpable}${rec?' · '+rec.name.split(' ').slice(0,3).join(' '):''}</span>
+        <span style="font-size:13px;font-weight:700;color:#e05050;">+${exc} kcal</span>
       </div>`;
     });
     html+=`</div></div>`;
-  } else {
-    html+=`<div class="an-empty">Sin recetas todavía.</div>`;
   }
-  html+=`</div></div>
 
-  <div class="an-card">
-    <div class="an-hdr"><span class="an-title">🛒 Precio medio por supermercado</span><span class="an-sub">Media por ingrediente con precio introducido</span></div>
-    <div class="an-body">`;
-  if(superHasData){
-    SUPERS.slice().sort((a,b)=>(superAvgs[a]||999)-(superAvgs[b]||999)).forEach(s=>{
-      if(superCounts[s]===0)return;
-      const isWinner=superAvgs[s]===minAvg;
-      html+=`<div class="super-an-row">
-        <div class="super-logo" style="background:${SUPER_COLORS[s]};width:10px;height:10px;border-radius:50%;flex-shrink:0;"></div>
-        <span class="super-an-name">${SUPER_NAMES[s]}</span>
-        <span style="font-size:10px;color:var(--muted);">${superCounts[s]} ingredientes</span>
-        <span class="super-an-price" style="color:${isWinner?'var(--green)':'var(--ink)'};">${superAvgs[s].toFixed(2)} €/prod</span>
-        ${isWinner?'<span class="super-an-badge">✓ Mejor</span>':''}
-      </div>`;
-    });
-    html+=`<div class="an-note">Media calculada solo sobre los ingredientes con precio introducido en cada supermercado. Cuantos más precios introduzcas, más fiable la comparativa.</div>`;
+  // ── BLOQUE 3: Tendencia del mes ──
+  html+=`<div class="an-card full" style="margin-bottom:14px;">
+    <div class="an-hdr"><span class="an-title">📈 Tendencia del mes</span><span class="an-sub">Últimas 4 semanas · déficit acumulado vs peso real</span></div>
+    <div class="an-body" id="anTrendBody">`;
+
+  const wRange=[-3,-2,-1,0].map(off=>anWo+off);
+  const trendRows=wRange.map(w=>{
+    const wMon=getMon(w);const wKw=getKW(wMon);const wk=`${wKw}_${wMon.getFullYear()}`;
+    const wRecs=recipes.filter(r=>r.wo===w);
+    const wDay=[];
+    for(let d=0;d<7;d++){
+      const r=wRecs.find(x=>x.day===d);const lk=lunchKey(w,d);const l=lunches[lk]||null;
+      const ck=r?getKcal(r.name)||null:null;const tk=estimateLunchKcal(l);
+      const tot=(ck||tk)?FIJO+(tk||0)+(ck||0)+(cheatDays[`${w}_${d}`]||0):null;
+      wDay.push(tot);
+    }
+    const wKnown=wDay.filter(v=>v!==null);
+    const wMedia=wKnown.length?Math.round(wKnown.reduce((s,v)=>s+v,0)/wKnown.length):null;
+    const wDef=wMedia!==null?OBJETIVO-wMedia:null;
+    const wGrams=wDef!==null?Math.round(wDef*7/7700*1000):null;
+    const wLog=weightLog[wk]||{};
+    const wkKey=`${wKw}_${wMon.getFullYear()}`;
+    const isCycle=cycleWeeks.has(wkKey);
+    const wSat=getDayDate(w,5);
+    return {w,wKw,wMon,wSat,wMedia,wDef,wGrams,pesoReal:wLog.weight||null,dias:wKnown.length,wkKey,isCycle};
+  });
+
+  const hasAnyTrend=trendRows.some(r=>r.wMedia||r.pesoReal);
+  if(!hasAnyTrend){
+    html+=`<div class="an-empty">Acumula datos de varias semanas para ver la tendencia.</div>`;
   } else {
-    html+=`<div class="an-empty">Introduce precios en la pestaña Precios para ver la comparativa.</div>`;
-  }
-  html+=`</div></div></div>`;
-
-  // ── MACRO ANALYSIS ──────────────────────────────────────
-  // Targets for Nata: 1550 kcal/day, 80kg, sedentary, deficit goal
-  // Dinner targets (dinner = ~40% of total day):
-  // Total day targets: Prot ~90g, HC ~160g, Fat ~50g, Fibra >25g
-  // Dinner portion (~40%): Prot ~36g, HC ~64g, Fat ~20g, Fibra ~10g
-  const MACRO_TARGETS={prot:{label:'Proteína',unit:'g',target:36,color:'#5a9ec4',totalTarget:90},
-    hc:{label:'Hidratos',unit:'g',target:64,color:'#d4bc4a',totalTarget:160},
-    fett:{label:'Grasa',unit:'g',target:20,color:'#c48050',totalTarget:50},
-    fibra:{label:'Fibra',unit:'g',target:10,color:'#6db870',totalTarget:25}};
-  const MACRO_FIXED={prot:19,hc:84,fett:8,fibra:5}; // desayuno+cafés+choco
-
-  // Calc weekly macro averages from dinners with data
-  const macroRecs=weekRecs.filter(r=>{const d=recipeData[r.name];return d&&(d.prot||d.hc||d.fett);});
-  const macroAvg={};
-  if(macroRecs.length){
-    ['prot','hc','fett','fibra'].forEach(m=>{
-      const vals=macroRecs.map(r=>recipeData[r.name]?.[m]).filter(v=>v!=null);
-      macroAvg[m]=vals.length?vals.reduce((s,v)=>s+v,0)/vals.length:null;
+    const predPesos=trendRows.map(()=>null);
+    // Predicción de cada semana = peso real de la semana anterior ± déficit de esa semana
+    // (NO se sobreescribe con el peso real de la propia semana)
+    trendRows.forEach((r,i)=>{
+      if(i===0)return; // primera semana no tiene anterior
+      const prev=trendRows[i-1];
+      const base=prev.pesoReal; // usar siempre el peso real anterior como ancla
+      if(base==null)return;
+      const wg=prev.wGrams;
+      predPesos[i]=wg!=null?Math.round((base-wg/1000)*10)/10:base;
     });
-  }
-  const hasMacros=Object.values(macroAvg).some(v=>v!==undefined&&v!==null);
-
-  html+=`<div class="an-card full" style="margin-top:14px;">
-    <div class="an-hdr">
-      <span class="an-title">🔬 Macronutrientes semanales</span>
-      <span class="an-sub">Media de las cenas con datos · ${macroRecs.length} recetas</span>
-    </div>
-    <div class="an-body">`;
-
-  if(!hasMacros){
-    html+=`<div class="an-empty">Importa las recetas compactas con la barra de nutrientes para ver el análisis de macros.</div>`;
-  } else {
-    html+=`<div style="font-size:11px;color:var(--muted);margin-bottom:12px;">Media por cena + estimación del día completo (desayuno + tupper + cena)</div>`;
-    ['prot','hc','fett','fibra'].forEach(m=>{
-      const cfg=MACRO_TARGETS[m];
-      const dinnerVal=macroAvg[m];
-      if(dinnerVal===null||dinnerVal===undefined)return;
-      const totalEst=Math.round(dinnerVal+(MACRO_FIXED[m]||0));
-      const pct=Math.min((dinnerVal/cfg.target)*100,130);
-      const ratio=totalEst/cfg.totalTarget;
-      const badge=ratio<0.8?['low','Algo bajo']:ratio>1.25?['high','Alto']:['ok','✓ Bien'];
-      html+=`<div class="macro-row">
-        <span class="macro-lbl">${cfg.label}</span>
-        <div class="macro-bar-wrap">
-          <div class="macro-bar-fill" style="width:${pct}%;background:${cfg.color};opacity:.75;"></div>
-          <div class="macro-bar-target" style="left:${Math.min((cfg.target/cfg.target)*100,100)}%;"></div>
-        </div>
-        <span class="macro-val" style="color:var(--muted);">${dinnerVal.toFixed(0)}${cfg.unit} cena · <strong>${totalEst}${cfg.unit}</strong> día</span>
-        <span class="macro-badge ${badge[0]}">${badge[1]}</span>
-      </div>`;
+    // Para semanas sin peso real anterior, proyectar desde el perfil hacia adelante
+    const lastIdx=trendRows.length-1;
+    if(predPesos[lastIdx]==null&&trendRows[lastIdx].pesoReal==null){
+      // buscar la última con peso real y proyectar
+      for(let i=lastIdx;i>=0;i--){
+        if(trendRows[i].pesoReal!=null){
+          let p=trendRows[i].pesoReal;
+          for(let j=i+1;j<=lastIdx;j++){
+            const wg=trendRows[j-1].wGrams;
+            p=wg!=null?Math.round((p-wg/1000)*10)/10:p;
+            if(predPesos[j]==null)predPesos[j]=p;
+          }
+          break;
+        }
+      }
+    }
+    html+=`<table style="width:100%;border-collapse:collapse;font-size:12px;">
+      <thead><tr style="color:var(--muted);font-size:11px;font-weight:600;">
+        <th style="text-align:left;padding:4px 0;">Semana</th>
+        <th style="text-align:right;padding:4px 6px;">Media kcal</th>
+        <th style="text-align:right;padding:4px 6px;">vs Objetivo</th>
+        <th style="text-align:right;padding:4px 6px;">Predicción</th>
+        <th style="text-align:right;padding:4px 6px;">Sábado · Peso real</th>
+        <th style="text-align:right;padding:4px 6px;">Pasos/día</th>
+        <th style="padding:4px 4px;"></th>
+      </tr></thead><tbody>`;
+    trendRows.forEach(({w,wKw,wMon,wSat,wMedia,wDef,wGrams,pesoReal,isCycle,wkKey},i)=>{
+      const isNow=w===anWo;
+      const predPeso=predPesos[i];
+      const wExceso=wMedia!==null?wMedia-OBJETIVO:null;
+      const excColor=wExceso===null?'var(--muted)':wExceso<0?'#2e6b30':wExceso<=150?'#e0a830':'#e05050';
+      const excStr=wExceso===null?'—':wExceso<0?`${Math.abs(Math.round(wExceso))} kcal de sobra`:`+${Math.round(wExceso)} kcal de exceso`;
+      const cycleColor='#9b59b6';
+      const wSteps=(weightLog[wkKey]||{}).steps||null;
+      html+=`<tr style="border-top:1px solid var(--border-light);${isNow?'font-weight:600;background:var(--light);':''}${isCycle?'background:#fdf6ff;':''}">
+        <td style="padding:7px 0;">S${wKw} <span style="font-weight:400;color:var(--muted);font-size:10px;">${fmt(wMon)}</span></td>
+        <td style="text-align:right;padding:7px 6px;">${wMedia?Math.round(wMedia)+' kcal':'—'}</td>
+        <td style="text-align:right;padding:7px 6px;font-size:11px;color:${excColor};">${excStr}</td>
+        <td style="text-align:right;padding:7px 6px;color:#5a9ec4;">${predPeso?predPeso+' kg':'—'}</td>
+        <td style="text-align:right;padding:7px 6px;">
+          <span style="font-size:10px;color:var(--muted);margin-right:4px;">${fmt(wSat)}</span>
+          <input type="number" step="0.1" placeholder="—" value="${pesoReal||''}"
+            style="width:60px;text-align:right;border:1px solid var(--border);border-radius:4px;padding:3px 5px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:${pesoReal?'700':'400'};color:${pesoReal?(isCycle?cycleColor:'var(--ink)'):'var(--muted)'};"
+            onchange="saveWeight('${wkKey}','weight',this.value);renderAnalisis()"/>
+          ${pesoReal&&predPeso?`<span style="font-size:10px;color:${pesoReal<predPeso?'#2e6b30':'#e05050'};margin-left:2px;">${pesoReal<predPeso?'▼':'▲'}${Math.abs(pesoReal-predPeso).toFixed(1)}</span>`:''}
+        </td>
+        <td style="text-align:right;padding:7px 6px;">
+          <input type="number" placeholder="—" value="${wSteps||''}"
+            style="width:65px;text-align:right;border:1px solid var(--border);border-radius:4px;padding:3px 5px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:${wSteps?'700':'400'};"
+            onchange="saveWeight('${wkKey}','steps',this.value);renderAnalisis()"/>
+          ${wSteps?'<span style="font-size:10px;color:var(--muted);margin-left:2px;">🚶</span>':''}
+        </td>
+        <td style="padding:7px 4px;text-align:center;">
+          <button onclick="toggleCycle('${wkKey}')" title="${isCycle?'Quitar ciclo':'Marcar semana con ciclo'}"
+            style="background:${isCycle?'#9b59b622':'transparent'};border:1px solid ${isCycle?'#9b59b6':'var(--border)'};border-radius:6px;padding:2px 6px;cursor:pointer;font-size:13px;line-height:1;">💧</button>
+        </td>
+      </tr>`;
     });
-    html+=`<div class="an-note">Objetivos día completo: Proteína ~${MACRO_TARGETS.prot.totalTarget}g · Hidratos ~${MACRO_TARGETS.hc.totalTarget}g · Grasa ~${MACRO_TARGETS.fett.totalTarget}g · Fibra >${MACRO_TARGETS.fibra.totalTarget}g. 
-    Basado en 1.550 kcal/día con déficit moderado para pérdida de peso. La estimación del día incluye desayuno fijo y tupper estimado.</div>`;
+    html+=`</tbody></table>
+    <div class="an-note" style="margin-top:8px;">Pesaje los sábados · Pasos = promedio semanal de iPhone Salud · 💧 semana con ciclo · ▼ mejor de lo predicho · ▲ peor</div>`;
   }
   html+=`</div></div>`;
 
   document.getElementById('anContent').innerHTML=html;
-  renderWeight();
+  document.getElementById('anWeight').innerHTML='';
+  renderWeightChart();
 }
 
-function weightKey(wo){
-  const mon=getMon(wo);
-  return `${getKW(mon)}_${mon.getFullYear()}`;
-}
+function weightKey(wo){const mon=getMon(wo);return `${getKW(mon)}_${mon.getFullYear()}`;}
 
 function saveWeight(wk,field,val){
   if(!weightLog[wk])weightLog[wk]={};
-  const num=parseFloat(val.replace(',','.'));
+  const num=parseFloat(String(val).replace(',','.'));
   if(!isNaN(num)&&num>0)weightLog[wk][field]=num;
   else delete weightLog[wk][field];
   if(!weightLog[wk].weight&&!weightLog[wk].steps)delete weightLog[wk];
-  save();renderWeight();
+  save();
 }
 
-function renderWeight(){
-  // Gather all weeks that have recipes or weight data
-  const wos=[...new Set([...recipes.map(r=>r.wo),...Object.keys(weightLog).map(k=>{
-    // reverse lookup: find wo from kw_year key
-    for(let w=-2;w<10;w++){const mon=getMon(w);if(`${getKW(mon)}_${mon.getFullYear()}`===k)return w;}
-    return null;
-  }).filter(w=>w!==null)])].sort((a,b)=>a-b);
+function toggleCycle(wk){
+  if(cycleWeeks.has(wk))cycleWeeks.delete(wk);
+  else cycleWeeks.add(wk);
+  save();renderAnalisis();
+}
 
+function renderWeightChart(){
+  // Recopilar todas las semanas con recetas o peso registrado
+  const allWos=new Set(recipes.map(r=>r.wo));
+  Object.keys(weightLog).forEach(wk=>{
+    for(let w=-4;w<20;w++){const mon=getMon(w);if(`${getKW(mon)}_${mon.getFullYear()}`===wk){allWos.add(w);break;}}
+  });
+  const wos=[...allWos].sort((a,b)=>a-b);
   if(!wos.length){document.getElementById('anWeight').innerHTML='';return;}
 
-  // Calc weekly deficit from kcal data
-  const KCAL_PER_KG=7700;
-  const PESO_INICIO=80;
-
+  // Datos por semana
   const weekData=wos.map(w=>{
-    const mon=getMon(w);const kw=getKW(mon);const yr=mon.getFullYear();
-    const wk=`${kw}_${yr}`;
+    const mon=getMon(w);const kw=getKW(mon);const wk=`${kw}_${mon.getFullYear()}`;
     const wRecs=recipes.filter(r=>r.wo===w);
-    // Avg daily deficit for week
-    const dayDeficits=[];
+    const dayTotals=[];
     for(let d=0;d<7;d++){
-      const rec=wRecs.find(r=>r.day===d);
-      const lkey=lunchKey(w,d);
-      const l=lunches[lkey]||null;
-      const cenaKcal=rec?getKcal(rec.name)||null:null;
-      const tupperKcal=estimateLunchKcal(l);
-      if(cenaKcal&&tupperKcal){
-        const total=FIJO+tupperKcal+cenaKcal;
-        dayDeficits.push(OBJETIVO-total); // positive = deficit, negative = surplus
-      }
+      const r=wRecs.find(x=>x.day===d);const l=lunches[lunchKey(w,d)]||null;
+      const ck=r?getKcal(r.name)||null:null;const tk=estimateLunchKcal(l);
+      const tot=(ck||tk)?FIJO+(tk||0)+(ck||0)+(cheatDays[`${w}_${d}`]||0):null;
+      if(tot)dayTotals.push(tot);
     }
-    const avgDeficit=dayDeficits.length?dayDeficits.reduce((s,v)=>s+v,0)/dayDeficits.length:null;
-    const weekDeficit=avgDeficit!==null?Math.round(avgDeficit*7):null;
-    const wl=weightLog[wk]||{};
-    return{w,kw,yr,wk,mon,avgDeficit,weekDeficit,weight:wl.weight||null,steps:wl.steps||null};
+    const media=dayTotals.length?Math.round(dayTotals.reduce((s,v)=>s+v,0)/dayTotals.length):null;
+    const wDef=media!=null?OBJETIVO-media:null; // positivo=pérdida
+    const wGrams=wDef!=null?Math.round(wDef*7/7700*1000):null;
+    const wLog=weightLog[wk]||{};
+    return{w,kw,mon,media,wDef,wGrams,pesoReal:wLog.weight||null,isCycle:cycleWeeks.has(wk)};
   });
 
-  // Build predicted weight line
-  let predWeight=null;
-  const withWeight=weekData.filter(x=>x.weight!==null);
-  if(withWeight.length>0){
-    // anchor on first real weight
-    predWeight=withWeight[0].weight;
-  } else {
-    predWeight=PESO_INICIO;
+  // Predicción = peso real semana anterior ± déficit
+  const predPesos=weekData.map(()=>null);
+  weekData.forEach((d,i)=>{
+    if(i===0)return;
+    const prev=weekData[i-1];
+    const base=prev.pesoReal;
+    if(base==null)return;
+    const wg=prev.wGrams;
+    predPesos[i]=wg!=null?Math.round((base-wg/1000)*10)/10:base;
+  });
+  // Proyectar hacia adelante desde el último peso real conocido
+  const lastRealIdx=weekData.reduce((acc,d,i)=>d.pesoReal!=null?i:acc,-1);
+  if(lastRealIdx>=0){
+    let p=weekData[lastRealIdx].pesoReal;
+    for(let i=lastRealIdx+1;i<weekData.length;i++){
+      const wg=weekData[i-1].wGrams;
+      p=wg!=null?Math.round((p-wg/1000)*10)/10:p;
+      if(predPesos[i]==null)predPesos[i]=p;
+    }
   }
 
-  const predictions=[];
-  let running=predWeight;
-  weekData.forEach((wd,i)=>{
-    if(i===0&&withWeight.length>0)running=withWeight[0].weight;
-    predictions.push(running);
-    if(wd.weekDeficit!==null)running=Math.max(40,running-(wd.weekDeficit/KCAL_PER_KG));
-  });
-
-  // SVG chart
-  const W=860,H=180,PAD={t:16,r:20,b:30,l:40};
-  const chartW=W-PAD.l-PAD.r,chartH=H-PAD.t-PAD.b;
-  const allWeights=[...predictions.filter(Boolean),...weekData.map(x=>x.weight).filter(Boolean)];
-  const minW=Math.floor(Math.min(...allWeights)-1);
-  const maxW=Math.ceil(Math.max(...allWeights)+1);
+  // SVG
+  const allW=[...predPesos.filter(v=>v!=null),...weekData.map(d=>d.pesoReal).filter(v=>v!=null)];
+  if(!allW.length){document.getElementById('anWeight').innerHTML='';return;}
+  const minW=Math.floor(Math.min(...allW)-0.5);
+  const maxW=Math.ceil(Math.max(...allW)+0.5);
   const n=weekData.length;
-  const xScale=i=>PAD.l+(i/(Math.max(n-1,1)))*chartW;
-  const yScale=v=>PAD.t+((maxW-v)/(maxW-minW))*chartH;
+  const W=860,H=200,PAD={t:20,r:20,b:32,l:44};
+  const cW=W-PAD.l-PAD.r,cH=H-PAD.t-PAD.b;
+  const xS=i=>PAD.l+(n<2?cW/2:i/(n-1)*cW);
+  const yS=v=>PAD.t+((maxW-v)/(maxW-minW||1))*cH;
 
-  // grid lines
-  let svg=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px;">`;
-  // y grid
-  for(let kg=Math.ceil(minW);kg<=maxW;kg++){
-    const y=yScale(kg);
-    svg+=`<line x1="${PAD.l}" y1="${y}" x2="${W-PAD.r}" y2="${y}" stroke="#eee" stroke-width="1"/>
-          <text x="${PAD.l-4}" y="${y+4}" font-size="9" fill="#aaa" text-anchor="end">${kg}</text>`;
+  let svg=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px;display:block;">`;
+  // Grid
+  for(let kg=minW;kg<=maxW;kg+=0.5){
+    const y=yS(kg);const isInt=Number.isInteger(kg);
+    svg+=`<line x1="${PAD.l}" y1="${y}" x2="${W-PAD.r}" y2="${y}" stroke="${isInt?'#e0ddd8':'#f0ede8'}" stroke-width="${isInt?1:0.5}"/>`;
+    if(isInt)svg+=`<text x="${PAD.l-5}" y="${y+4}" font-size="9" fill="#aaa" text-anchor="end">${kg}</text>`;
   }
+  // Línea objetivo TDEE (sin pérdida = peso estable)
+  const objY=yS(userProfile.peso);
+  svg+=`<line x1="${PAD.l}" y1="${objY}" x2="${W-PAD.r}" y2="${objY}" stroke="#d4bc4a" stroke-width="1" stroke-dasharray="3 3" opacity=".5"/>`;
   // x labels
-  weekData.forEach((wd,i)=>{
-    const x=xScale(i);
-    svg+=`<text x="${x}" y="${H-6}" font-size="9" fill="#aaa" text-anchor="middle">S${wd.kw}</text>`;
+  weekData.forEach((d,i)=>{
+    if(n<=12||i%2===0)svg+=`<text x="${xS(i)}" y="${H-8}" font-size="9" fill="#aaa" text-anchor="middle">S${d.kw}</text>`;
   });
-  // predicted line (dashed)
-  const predPath=predictions.map((v,i)=>`${i===0?'M':'L'}${xScale(i)},${yScale(v)}`).join(' ');
-  svg+=`<path d="${predPath}" fill="none" stroke="#5a9ec4" stroke-width="1.5" stroke-dasharray="4 3"/>`;
-  // real weight line
-  const realPoints=weekData.map((wd,i)=>wd.weight!==null?{x:xScale(i),y:yScale(wd.weight),v:wd.weight}:null).filter(Boolean);
-  if(realPoints.length>1){
-    const realPath=realPoints.map((p,i)=>`${i===0?'M':'L'}${p.x},${p.y}`).join(' ');
-    svg+=`<path d="${realPath}" fill="none" stroke="#2e6b30" stroke-width="2"/>`;
-  }
-  // dots real
-  realPoints.forEach(p=>{
-    svg+=`<circle cx="${p.x}" cy="${p.y}" r="4" fill="#2e6b30"/>
-          <text x="${p.x}" y="${p.y-8}" font-size="9" fill="#2e6b30" text-anchor="middle">${p.v.toString().replace('.',',')} kg</text>`;
+  // Línea predicción (azul punteado)
+  const predPoints=predPesos.map((v,i)=>v!=null?{x:xS(i),y:yS(v)}:null);
+  const predSegs=[];let seg=[];
+  predPoints.forEach(p=>{if(p){seg.push(p);}else{if(seg.length)predSegs.push(seg);seg=[];}});
+  if(seg.length)predSegs.push(seg);
+  predSegs.forEach(s=>{
+    if(s.length>0)svg+=`<path d="M${s.map(p=>`${p.x},${p.y}`).join('L')}" fill="none" stroke="#5a9ec4" stroke-width="1.5" stroke-dasharray="5 3"/>`;
   });
-  // legend
-  svg+=`<line x1="${W-180}" y1="12" x2="${W-160}" y2="12" stroke="#5a9ec4" stroke-width="1.5" stroke-dasharray="4 3"/>
-        <text x="${W-155}" y="16" font-size="9" fill="#5a9ec4">Predicción</text>
-        <line x1="${W-100}" y1="12" x2="${W-80}" y2="12" stroke="#2e6b30" stroke-width="2"/>
-        <circle cx="${W-88}" cy="12" r="3" fill="#2e6b30"/>
-        <text x="${W-75}" y="16" font-size="9" fill="#2e6b30">Real</text>`;
+  // Línea peso real (verde), puntos de ciclo en lila
+  const realPoints=weekData.map((d,i)=>d.pesoReal!=null?{x:xS(i),y:yS(d.pesoReal),v:d.pesoReal,kw:d.kw,isCycle:d.isCycle}:null).filter(Boolean);
+  const normalReal=realPoints.filter(p=>!p.isCycle);
+  const cycleReal=realPoints.filter(p=>p.isCycle);
+  if(realPoints.length>1){svg+=`<path d="M${realPoints.map(p=>`${p.x},${p.y}`).join('L')}" fill="none" stroke="#2e6b30" stroke-width="2"/>`;}
+  normalReal.forEach(p=>{
+    svg+=`<circle cx="${p.x}" cy="${p.y}" r="4" fill="#2e6b30" stroke="white" stroke-width="1.5"/>`;
+    svg+=`<text x="${p.x}" y="${p.y-9}" font-size="9" fill="#2e6b30" text-anchor="middle" font-weight="600">${p.v}</text>`;
+  });
+  cycleReal.forEach(p=>{
+    svg+=`<circle cx="${p.x}" cy="${p.y}" r="5" fill="#9b59b6" stroke="white" stroke-width="1.5"/>`;
+    svg+=`<text x="${p.x}" y="${p.y-10}" font-size="9" fill="#9b59b6" text-anchor="middle" font-weight="600">${p.v} 💧</text>`;
+  });
+  // Leyenda
+  svg+=`<line x1="${W-240}" y1="12" x2="${W-222}" y2="12" stroke="#5a9ec4" stroke-width="1.5" stroke-dasharray="5 3"/>
+        <text x="${W-217}" y="16" font-size="9" fill="#5a9ec4">Predicción</text>
+        <line x1="${W-155}" y1="12" x2="${W-137}" y2="12" stroke="#2e6b30" stroke-width="2"/>
+        <circle cx="${W-146}" cy="12" r="3" fill="#2e6b30"/>
+        <text x="${W-132}" y="16" font-size="9" fill="#2e6b30">Peso real</text>
+        <circle cx="${W-65}" cy="12" r="4" fill="#9b59b6"/>
+        <text x="${W-57}" y="16" font-size="9" fill="#9b59b6">💧 Ciclo</text>`;
   svg+=`</svg>`;
-
-  // Table
-  let table=`<table class="wt-table">
-    <tr><th>Semana</th><th>Déficit est.</th><th>Peso predicho</th><th>Peso real (kg)</th><th>Pasos/día</th><th>Diferencia</th></tr>`;
-  weekData.forEach((wd,i)=>{
-    const pred=predictions[i];
-    const diff=wd.weight&&pred?wd.weight-pred:null;
-    const diffStr=diff!==null?`<span class="wt-diff ${diff>0?'pos':'neg'}">${diff>0?'+':''}${diff.toFixed(1)} kg</span>`:'—';
-    table+=`<tr>
-      <td><strong>S${wd.kw}</strong> <span style="font-size:10px;color:var(--muted);">${fmt(wd.mon)}</span></td>
-      <td style="font-size:11px;color:var(--muted);">${wd.weekDeficit!==null?`${wd.weekDeficit>0?'-':'+'}${Math.abs(wd.weekDeficit)} kcal`:'—'}</td>
-      <td style="font-size:12px;color:#5a9ec4;font-weight:500;">${pred.toFixed(1)} kg</td>
-      <td><input class="wt-input" type="text" placeholder="—" value="${wd.weight||''}"
-        onchange="saveWeight('${wd.wk}','weight',this.value)" /></td>
-      <td><input class="wt-input" type="text" placeholder="—" value="${wd.steps||''}"
-        onchange="saveWeight('${wd.wk}','steps',this.value)" /></td>
-      <td>${diffStr}</td>
-    </tr>`;
-  });
-  table+=`</table>
-  <div class="an-note">La predicción asume 7.700 kcal = 1 kg de grasa. Las semanas sin datos de kcal no ajustan la predicción.</div>`;
 
   document.getElementById('anWeight').innerHTML=`
     <div class="an-card full" style="margin-top:14px;">
       <div class="an-hdr">
-        <span class="an-title">⚖️ Seguimiento de peso</span>
-        <span class="an-sub">Introduce tu peso cada semana para ver la evolución real vs predicha</span>
+        <span class="an-title">⚖️ Evolución del peso</span>
+        <span class="an-sub">Predicción basada en déficit · Peso real introducido</span>
       </div>
-      <div class="an-body">
-        ${svg}
-        ${table}
+      <div class="an-body">${svg}
+        <div class="an-note" style="margin-top:6px;">Introduce el peso real en la tabla de arriba cada semana · Línea amarilla = tu peso inicial de perfil (${userProfile.peso} kg)</div>
       </div>
     </div>`;
 }
@@ -4281,9 +4648,10 @@ async function init(){
     if(!epoch){epoch=getCurrentMon();save();}
     wo=Math.round((getCurrentMon()-epoch)/(7*24*3600*1000));
     msg.textContent='Montando el planificador…';
-    try{ initShopDayControls(); }catch(e){ msg.textContent='Error initShop: '+e.message; console.error(e); return; }
-    try{ render(); }catch(e){ msg.textContent='Error render: '+e.message; console.error(e); return; }
-    try{ renderHoy(); }catch(e){ msg.textContent='Error renderHoy: '+e.message; console.error(e); return; }
+    initShopDayControls();
+    render();
+    renderHoy();
+    document.getElementById('legBar').style.display='none'; // hoy tab no muestra leyenda
     overlay.style.display='none';
     // Aviso si no hay datos
     if(!recipes.length&&!Object.keys(prices).length&&!Object.keys(lunches).length){
@@ -4305,10 +4673,6 @@ async function init(){
   }
 }
 
-const TYPE_LABELS={huhn:'Pollo/Pavo',schwein:'Cerdo',fisch:'Pescado',veggi:'Vegetariano',rind:'Ternera',wurst:'Embutido'};
-const sugState={wo:null,day:null,type:null,lastSuggested:null};
-
-// ── RECOVERED FUNCTIONS ──────────────────────────────────────────────────────
 function closeTupper(){document.getElementById('tmodalOv').classList.remove('open');}
 
 function renderStepRows(steps){
@@ -4351,18 +4715,62 @@ function getStepRows(){
 
 function openAvoidModal(){
   renderAvoidTags();
+  // Rellenar perfil
+  document.getElementById('profPeso').value=userProfile.peso||'';
+  document.getElementById('profAltura').value=userProfile.altura||'';
+  document.getElementById('profEdad').value=userProfile.edad||'';
+  document.getElementById('profActividad').value=userProfile.actividad||'sedentaria';
+  document.getElementById('profDeficit').value=String(userProfile.deficit||400);
+  document.getElementById('profFijo').value=userProfile.kcalFijas||595;
+  updateProfResult();
   document.getElementById('avoidModalOv').classList.add('open');
 }
 
 function closeAvoidModal(){document.getElementById('avoidModalOv').classList.remove('open');}
 
+function updateProfResult(){
+  const p={
+    peso:parseFloat(document.getElementById('profPeso').value)||userProfile.peso,
+    altura:parseFloat(document.getElementById('profAltura').value)||userProfile.altura,
+    edad:parseInt(document.getElementById('profEdad').value)||userProfile.edad,
+    actividad:document.getElementById('profActividad').value,
+    deficit:parseInt(document.getElementById('profDeficit').value)||400,
+    kcalFijas:parseInt(document.getElementById('profFijo').value)||595,
+  };
+  const tdee=calcTDEE(p);
+  const obj=tdee-p.deficit;
+  const disp=document.getElementById('profResult');
+  if(!disp)return;
+  disp.innerHTML=`<strong>TDEE estimado:</strong> ${tdee} kcal/día &nbsp;·&nbsp; <strong>Objetivo:</strong> ${obj} kcal/día<br>
+    <span style="color:var(--muted);">Pérdida estimada: ~${Math.round(p.deficit*7/7700*1000)}g/semana · ~${(p.deficit*30/7700).toFixed(1)}kg/mes</span>`;
+}
+
+function saveProfile(){
+  userProfile={
+    ...userProfile,
+    peso:parseFloat(document.getElementById('profPeso').value)||userProfile.peso,
+    altura:parseFloat(document.getElementById('profAltura').value)||userProfile.altura,
+    edad:parseInt(document.getElementById('profEdad').value)||userProfile.edad,
+    actividad:document.getElementById('profActividad').value,
+    deficit:parseInt(document.getElementById('profDeficit').value)||400,
+    kcalFijas:parseInt(document.getElementById('profFijo').value)||595,
+  };
+  updateProfileConstants();
+  save();
+  if(document.getElementById('pane-analisis').classList.contains('active'))renderAnalisis();
+  showToast('✅ Perfil guardado');
+  closeAvoidModal();
+}
+
 function renderAvoidTags(){
-  ['p1','p2'].forEach(p=>{
+  ['p1'].forEach(p=>{
     const cap=p.charAt(0).toUpperCase()+p.slice(1);
     const el=document.getElementById(`avoidTags${cap}`);
     el.innerHTML=(avoidList[p]||[]).map(w=>`<span class="avoid-tag">${w}<button class="avoid-tag-del" onclick="removeAvoid('${p}','${w}')">✕</button></span>`).join('')||`<span style="font-size:11px;color:var(--faint);">Sin restricciones</span>`;
   });
 }
+const TYPE_LABELS={huhn:'Pollo/Pavo',schwein:'Cerdo',fisch:'Pescado',veggi:'Vegetariano',rind:'Ternera',wurst:'Embutido'};
+const sugState={wo:null,day:null,type:null,lastSuggested:null};
 
 function addAvoid(person){
   const cap=person.charAt(0).toUpperCase()+person.slice(1);
@@ -4517,7 +4925,6 @@ function annotateStep(text, ings){
   }
   return result;
 }
-// ─────────────────────────────────────────────────────────────────────────────
 
 init();
 
@@ -4558,14 +4965,55 @@ function pdfSetMode(mode){
   document.getElementById('textModeBtn').style.color = isPdf ? 'var(--muted)' : 'white';
 }
 
-function pdfProcessText(){
+async function pdfProcessText(){
   const raw = document.getElementById('pdfTextInput').value.trim();
   if(!raw){ pdfSetStatus('err','Pega el texto de la receta antes de continuar.'); return; }
-  pdfSetStatus('','');
+
+  // Detect if text is in German
+  const isGerman = /\b(Zutaten|Zubereitung|Pfanne|Wasser|Salz|Minuten|erhitzen|abschmecken|schneiden|kochen|braten|dünsten|Schritt|Nährwerte|Eiweiß|Kohlenhydrate|Ballaststoffe)\b/i.test(raw);
+
+  if(isGerman){
+    pdfSetStatus('', '✨ Traduciendo del alemán al español…');
+    try{
+      const resp = await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          model:'claude-sonnet-4-20250514',
+          max_tokens:4000,
+          system:`Eres un traductor especializado en recetas de HelloFresh Alemania. 
+Traduce el texto de receta del alemán al español.
+REGLAS ESTRICTAS:
+- Traduce TODO el texto al español, incluidos títulos de pasos, ingredientes y preparación
+- Conserva los números, cantidades y unidades exactamente (250g, 1 Stück → 1 pieza, etc.)
+- Conserva el formato y estructura del texto original (saltos de línea, etc.)
+- "Stück" → "pieza", "EL" → "EL" (cucharada), "TL" → "TL" (cucharadita), "Min" → "Min"
+- Conserva los valores nutricionales en el mismo formato
+- No añadas ni quites información
+- Devuelve SOLO el texto traducido, sin explicaciones ni comillas adicionales`,
+          messages:[{role:'user', content: raw}]
+        })
+      });
+      const data = await resp.json();
+      const translated = data.content?.find(b=>b.type==='text')?.text || raw;
+      pdfSetStatus('ok','✅ Traducido. Revisa y ajusta si es necesario.');
+      document.getElementById('pdfTextInput').value = translated;
+      _pdfParseText(translated);
+    } catch(e){
+      pdfSetStatus('err','Error al traducir. Procesando texto original…');
+      _pdfParseText(raw);
+    }
+  } else {
+    pdfSetStatus('','');
+    _pdfParseText(raw);
+  }
+}
+
+function _pdfParseText(raw){
   // Pre-clean: remove lines ending with "-image", "Nutri-Score" blocks, image alt-text
   const lines = raw.split(/\n/).filter(l => {
     const t = l.trim();
-    if(!t) return true; // keep empty lines (used as separators)
+    if(!t) return true;
     if(/-image$/i.test(t)) return false;
     if(/^Nutri-Score/i.test(t)) return false;
     if(/^Der Nutri-Score/i.test(t)) return false;
@@ -4577,13 +5025,12 @@ function pdfProcessText(){
     text: text.trim(),
     x: 50,
     y: i * 20,
-    h: i < 3 ? 14 : 10, // first lines slightly taller = likely title
+    h: i < 3 ? 14 : 10,
     page: 1
   }));
-  // Mark lines that look like section headers as larger (helps title detection)
   items.forEach((it, i) => {
-    if(i === 0 && it.text.length > 3) it.h = 18; // first line = title
-    if(i === 1 && it.text.length > 3 && it.text.length < 60) it.h = 8; // subtitle
+    if(i === 0 && it.text.length > 3) it.h = 18;
+    if(i === 1 && it.text.length > 3 && it.text.length < 60) it.h = 8;
   });
   const parsed = pdfParse(items);
   pdfPopulate(parsed);
@@ -4662,7 +5109,7 @@ function pdfParse(items){
     cleanLines.push(ln);
   }
 
-  const r={name:'',subtitle:'',time:'',kcal:'',diff:'Einfach',protein:'huhn',
+  const r={name:'',subtitle:'',time:'',kcal:'',diff:'Fácil',protein:'huhn',
     nProt:'',nHc:'',nFett:'',nFibra:'',ings:[],vorrat:'',steps:[],tip:'',allergen:''};
 
   // Name: biggest text page 1
@@ -4676,8 +5123,8 @@ function pdfParse(items){
   // Time / kcal / diff
   const tM=fullRaw.match(/(\d{1,3})\s*(Min|min|minutos)/i);if(tM)r.time=tM[1];
   const kM=fullRaw.match(/(\d{3,4})\s*kcal/i);if(kM)r.kcal=kM[1];
-  if(/Anspruchsvoll|Difícil|Avanzado/i.test(fullRaw))r.diff='Anspruchsvoll';
-  else if(/Mittel|Medio|Intermedio/i.test(fullRaw))r.diff='Mittel';
+  if(/Anspruchsvoll|Difícil|Avanzado/i.test(fullRaw))r.diff='Difícil';
+  else if(/Mittel|Medio|Intermedio/i.test(fullRaw))r.diff='Medio';
 
   r.protein=pdfDetectProtein(fullRaw);
 
@@ -4685,21 +5132,26 @@ function pdfParse(items){
   const nL=fullRaw.match(/(\d+[.,]?\d*)\s*g?\s*(Eiweiß|Proteínas?|Proteina)[\s\S]{0,5}(\d+[.,]?\d*)\s*g?\s*(Kohlenhydrate|Hidratos?(?: de carbono)?|Carbohidratos?)[\s\S]{0,5}(\d+[.,]?\d*)\s*g?\s*(Fett\b|Grasas? totales?|Grasas?)[\s\S]{0,5}(\d+[.,]?\d*)\s*g?\s*(Ballaststoffe|Fibra(?: alimentaria)?)/i);
   if(nL){r.nProt=nL[1];r.nHc=nL[3];r.nFett=nL[5];r.nFibra=nL[7];}
   else{
-    const tryMatch=(re)=>{ const m=fullRaw.match(re); return m?m[m.length-1]:null; };
-    // "Label: value g" order
-    r.nProt  = tryMatch(/(Eiweiß|Proteínas?|Proteina)[\s·:\t]{0,8}([\d.,]+)\s*g/i) ||
-               tryMatch(/([\d.,]+)\s*g\s*(Eiweiß|Proteínas?)/i); // "value g Label" order
-    r.nHc    = tryMatch(/(Kohlenhydrate|Hidratos?(?: de carbono)?|Carbohidratos?)[\s·:\t]{0,8}([\d.,]+)\s*g/i) ||
-               tryMatch(/([\d.,]+)\s*g\s*(Kohlenhydrate|Hidratos?|Carbohidratos?)/i);
-    r.nFett  = tryMatch(/(\bFett\b|Grasas? totales?|\bGrasas?\b)[\s·:\t]{0,8}([\d.,]+)\s*g/i) ||
-               tryMatch(/([\d.,]+)\s*g\s*(\bFett\b|Grasas?)/i);
-    r.nFibra = tryMatch(/(Ballaststoffe|Fibra(?: alimentaria)?)[\s·:\t]{0,8}([\d.,]+)\s*g/i) ||
-               tryMatch(/([\d.,]+)\s*g\s*(Ballaststoffe|Fibra)/i);
+    const tryMatch=(re,valGroup=null)=>{ 
+    const m=fullRaw.match(re); 
+    if(!m)return null;
+    // If valGroup specified, return that; otherwise return last group
+    return valGroup ? m[valGroup] : m[m.length-1]; 
+  };
+  // "Label value" patterns — value is last group ✅
+  r.nProt  = tryMatch(/(Eiweiß|Proteínas?|Proteina)[\s·:\t]{0,8}([\d.,]+)\s*g/i) ||
+             tryMatch(/([\d.,]+)\s*g?\s*(Eiweiß|Proteínas?)/i, 1);  // "value Label" → group 1
+  r.nHc    = tryMatch(/(Kohlenhydrate|Hidratos?(?: de carbono)?|Carbohidratos?)[\s·:\t]{0,8}([\d.,]+)\s*g/i) ||
+             tryMatch(/([\d.,]+)\s*g?\s*(Kohlenhydrate|Hidratos?|Carbohidratos?)/i, 1);
+  r.nFett  = tryMatch(/(\bFett\b|Grasas? totales?|\bGrasas?\b)[\s·:\t]{0,8}([\d.,]+)\s*g/i) ||
+             tryMatch(/([\d.,]+)\s*g?\s*(\bFett\b|Grasas?)/i, 1);
+  r.nFibra = tryMatch(/(Ballaststoffe|Fibra(?: alimentaria)?)[\s·:\t]{0,8}([\d.,]+)\s*g/i) ||
+             tryMatch(/([\d.,]+)\s*g?\s*(Ballaststoffe|Fibra)/i, 1);
   }
 
   // Ingredients
-  const UNITS_END=/\s*([½¼¾\d][\d.,\/]*\s*(?:g|ml|kg|l|EL|TL|Stk\.|Stk|Bund|Pck\.|Dose|Stück|cl|Pack|pieza|piezas|unidad|unidades|cucharada|cucharadas)\.?)$/i;
-  const UNITS_ONLY=/^([½¼¾\d][\d.,\/]*)\s*(g|ml|kg|l|EL|TL|Stk\.|Stk|Bund|Pck\.|Dose|Stück|cl|Pack|pieza|piezas|unidad|unidades|cucharada|cucharadas)\.?\s*$/i;
+  const UNITS_END=/\s*([½¼¾\d][\d.,\/]*\s*(?:g|ml|kg|l|EL|TL|Esslöffel|Teelöffel|Stk\.|Stk|Bund|Pck\.|Dose|Stück|cl|Pack|Prise|Messerspitze|pieza|piezas|unidad|unidades|cucharada|cucharadas)\.?)$/i;
+  const UNITS_ONLY=/^([½¼¾\d][\d.,\/]*)\s*(g|ml|kg|l|EL|TL|Esslöffel|Teelöffel|Stk\.|Stk|Bund|Pck\.|Dose|Stück|cl|Pack|Prise|Messerspitze|pieza|piezas|unidad|unidades|cucharada|cucharadas)\.?\s*$/i;
   const TDASH=/\s*[–—]\s*$/;
   const ings=[],vorrat=[];
   const NONE=0,ZUT=1,VOR=2;let sec=NONE;
@@ -4713,9 +5165,20 @@ function pdfParse(items){
     if(/^[•·\-]\s/.test(raw))continue;
     const t=raw.replace(TDASH,'').trim();
     if(!t||/^[–—]$/.test(t)||/^(nach Geschmack|para probar|a gusto|al gusto|al gusto)/i.test(t)||/^(Für|Para) \d/i.test(t))continue;
-    if(sec===VOR){vorrat.push(t);continue;}
+    if(sec===VOR){
+      // Si tiene cantidad al final de línea → va a ings con qty propio
+      const eqV=t.match(UNITS_END);
+      if(eqV){const qV=eqV[1].trim();const nV=t.slice(0,t.length-eqV[0].length).trim();if(nV.length>1)ings.push({name:nV,qty:qV});continue;}
+      // Si la siguiente línea es una cantidad → empareja
+      let j=i+1,qV='';
+      while(j<cleanLines.length){const nxt=cleanLines[j].text.trim();if(!nxt||/^\(/.test(nxt)){j++;continue;}if(UNITS_ONLY.test(nxt)){qV=nxt;j++;break;}break;}
+      if(qV)ings.push({name:t,qty:qV});
+      else vorrat.push(t);
+      i=j-1;
+      continue;
+    }
     const eq=t.match(UNITS_END);
-    if(eq){const qty=eq[1].trim();const name=t.slice(0,t.length-eq[0].length).trim();if(name.length>1)ings.push({name,qty});i++;continue;}
+    if(eq){const qty=eq[1].trim();const name=t.slice(0,t.length-eq[0].length).trim();if(name.length>1)ings.push({name,qty});continue;}
     const name=t;if(name.length<2)continue;
     let j=i+1,qty='';
     while(j<cleanLines.length){const n=cleanLines[j].text.trim();if(/^\(/.test(n)||!n||/^nach Geschmack|para probar|a gusto|al gusto/i.test(n)){j++;continue;}if(UNITS_ONLY.test(n)){qty=n;j++;break;}break;}
@@ -4731,6 +5194,8 @@ function pdfParse(items){
     if(/^(Zubereitung|Preparación|PREPARACIÓN|ZUBEREITUNG)$/i.test(t)){inZub=true;continue;}
     if(!inZub)continue;
     if(/^(Nährwert|Allergen|Empty|Guten Appetit)/i.test(t))continue;
+    // Handle "3Título" — digit glued to title with no space
+    t=t.replace(/^(\d+)([A-ZÁÉÍÓÚÜÑ])/,(_, num, letter) => letter);
     t=t.replace(/^\d\s+/,'');if(/^\d$/.test(t))continue;
     // Split "TitleBody" CamelCase: "Verduras cortadasPrecaliente" → title + body
     const ccSplit = t.match(/^([A-ZÁÉÍÓÚÜÑ][a-záéíóúüñß ,\'\"-]{3,50}?)([A-ZÁÉÍÓÚÜÑ][a-záéíóúüñß].{15,})$/);
@@ -4771,6 +5236,27 @@ function pdfParse(items){
 }
 function pdfParseSteps(){}
 
+function pdfResetForm(){
+  pdfSelectedWo=null;pdfSelectedDay=null;
+  pdfProtein='huhn';
+  // Ocultar formulario y resetear drop zone
+  document.getElementById('pdfForm').style.display='none';
+  document.getElementById('pdfDrop').classList.remove('loaded');
+  document.getElementById('pdfIcon').textContent='📥';
+  document.getElementById('pdfLabel').textContent='PDF HelloFresh aquí o clic para seleccionar';
+  // Limpiar inputs de archivo y texto
+  document.getElementById('pdfFileIn').value='';
+  const ta=document.getElementById('pdfTextInput');if(ta){ta.value='';ta.blur();}
+  // Limpiar todos los campos del formulario
+  ['pdfName','pdfSub2','pdfTime','pdfKcal','pdfProt','pdfHc','pdfFett','pdfFibra','pdfVorrat','pdfTip','pdfAllergen'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.value='';
+  });
+  document.getElementById('pdfIngList').innerHTML='';
+  document.getElementById('pdfStepList').innerHTML='';
+  document.querySelectorAll('.prot-btn').forEach(b=>b.classList.toggle('active',b.dataset.p==='huhn'));
+  pdfSetStatus('','');
+}
+
 // ── POPULATE FORM ────────────────────────────────────
 function pdfPopulate(r){
   pdfSetProt(r.protein);
@@ -4778,7 +5264,7 @@ function pdfPopulate(r){
   document.getElementById('pdfSub2').value=r.subtitle||'';
   document.getElementById('pdfTime').value=r.time||'';
   document.getElementById('pdfKcal').value=r.kcal||'';
-  document.getElementById('pdfDiff').value=r.diff||'Einfach';
+  document.getElementById('pdfDiff').value=r.diff||'Fácil';
   document.getElementById('pdfProt').value=r.nProt||'';
   document.getElementById('pdfHc').value=r.nHc||'';
   document.getElementById('pdfFett').value=r.nFett||'';
@@ -4943,15 +5429,8 @@ function pdfAddToPlanner(){
   save();saveRecipes();render();
   showToast(`"${name}" añadida al ${['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'][dayIdx]}`);
 
-  // Reset form
-  pdfSelectedWo=null;pdfSelectedDay=null;
-  document.getElementById('pdfForm').style.display='none';
-  document.getElementById('pdfDrop').classList.remove('loaded');
-  document.getElementById('pdfIcon').textContent='📥';
-  document.getElementById('pdfLabel').textContent='PDF HelloFresh aquí o clic para seleccionar';
-  document.getElementById('pdfFileIn').value='';
-  document.getElementById('pdfTextInput').value='';
-  pdfSetStatus('','');
+  // Reset completo
+  pdfResetForm();
 
   // Switch to calendar
   switchTab('plan');
