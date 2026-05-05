@@ -1462,7 +1462,7 @@ function render(){
       const ck=`${absW}_${d}`;
       const isCheat=!!cheatDays[ck];
       const dayHdr=mk('div','day-dt');
-      dayHdr.innerHTML=`${isCheat?`<span class="cheat-badge">🍕 Cheat</span>`:`<button class="cheat-btn${isCheat?' active':''}" title="Marcar como cheat day" onclick="toggleCheatDay('${ck}')">🍕</button>`}${fmt(cd)}`;
+      dayHdr.innerHTML=`<button class="cheat-btn${isCheat?' active':''}" title="${isCheat?'Quitar cheat day':'Marcar como cheat day'}" onclick="toggleCheatDay('${ck}')">${isCheat?'🍕 Cheat':'🍕'}</button>${fmt(cd)}`;
       cell.appendChild(dayHdr);
       const rec=recipes.find(r=>r.wo===absW&&r.day===d);
       if(rec){cell.appendChild(makeChip(rec));}
@@ -1590,7 +1590,7 @@ function makeLunchCell(wOff,day){
   const key=lunchKey(wOff,day);
   const l=lunches[key]||{};
   const wrap=mk('div','lunch-cell');
-  const p1=l.p1||'';const p2=l.p2||'';
+  const p1=l.p1||'';
   const hasContent=p1||(l.ings&&l.ings.length)||(l.steps&&l.steps.length);
   const p1Warns=checkAvoid(p1,'p1');
   
@@ -1739,8 +1739,8 @@ function saveLunchModal(){
   
   const steps=getStepRows();
   
-  if(p1||p2||ings.length||p2_extra.length||steps.length||p2_note||prep_time)
-    lunches[key]={p1,p2,prep_time,ings,p2_extra,steps,p2_note};
+  if(p1||ings.length||steps.length||prep_time)
+    lunches[key]={p1,prep_time,ings,steps};
   else delete lunches[key];
   save();closeLunchModal();render();showToast('Comida guardada');
 }
@@ -4304,6 +4304,221 @@ async function init(){
     console.error(e);
   }
 }
+
+const TYPE_LABELS={huhn:'Pollo/Pavo',schwein:'Cerdo',fisch:'Pescado',veggi:'Vegetariano',rind:'Ternera',wurst:'Embutido'};
+const sugState={wo:null,day:null,type:null,lastSuggested:null};
+
+// ── RECOVERED FUNCTIONS ──────────────────────────────────────────────────────
+function closeTupper(){document.getElementById('tmodalOv').classList.remove('open');}
+
+function renderStepRows(steps){
+  const cont=document.getElementById('stepEditor');
+  cont.innerHTML='';
+  (steps||[]).forEach((step,i)=>cont.appendChild(makeStepRow(i,step.title||'',step.text||'')));
+}
+
+function makeStepRow(idx,title,text){
+  const wrap=document.createElement('div');
+  wrap.className='step-editor-row';
+  wrap.innerHTML=`<div class="step-editor-num">${idx+1}</div>
+    <div class="step-editor-fields">
+      <input type="text" value="${title.replace(/"/g,'&quot;')}" placeholder="Título del paso (ej. Cocer los garbanzos)"/>
+      <textarea placeholder="Descripción...">${text}</textarea>
+    </div>
+    <button class="ling-del" onclick="this.parentElement.remove();renumberSteps()" style="margin-top:6px;">✕</button>`;
+  return wrap;
+}
+
+function addStepRow(){
+  const cont=document.getElementById('stepEditor');
+  const idx=cont.children.length;
+  cont.appendChild(makeStepRow(idx,'',''));
+  cont.lastChild.querySelector('input').focus();
+}
+
+function renumberSteps(){
+  [...document.getElementById('stepEditor').children].forEach((row,i)=>{
+    row.querySelector('.step-editor-num').textContent=i+1;
+  });
+}
+
+function getStepRows(){
+  return [...document.getElementById('stepEditor').querySelectorAll('.step-editor-row')].map(row=>({
+    title:row.querySelector('input').value.trim(),
+    text:row.querySelector('textarea').value.trim()
+  })).filter(s=>s.title||s.text);
+}
+
+function openAvoidModal(){
+  renderAvoidTags();
+  document.getElementById('avoidModalOv').classList.add('open');
+}
+
+function closeAvoidModal(){document.getElementById('avoidModalOv').classList.remove('open');}
+
+function renderAvoidTags(){
+  ['p1','p2'].forEach(p=>{
+    const cap=p.charAt(0).toUpperCase()+p.slice(1);
+    const el=document.getElementById(`avoidTags${cap}`);
+    el.innerHTML=(avoidList[p]||[]).map(w=>`<span class="avoid-tag">${w}<button class="avoid-tag-del" onclick="removeAvoid('${p}','${w}')">✕</button></span>`).join('')||`<span style="font-size:11px;color:var(--faint);">Sin restricciones</span>`;
+  });
+}
+
+function addAvoid(person){
+  const cap=person.charAt(0).toUpperCase()+person.slice(1);
+  const inp=document.getElementById(`avoidInput${cap}`);
+  const val=inp.value.trim().toLowerCase();
+  if(!val)return;
+  if(!avoidList[person])avoidList[person]=[];
+  if(!avoidList[person].includes(val))avoidList[person].push(val);
+  inp.value='';save();renderAvoidTags();showToast(`Añadido a lista de ${cap}`);
+}
+
+function removeAvoid(person,word){
+  avoidList[person]=(avoidList[person]||[]).filter(w=>w!==word);
+  save();renderAvoidTags();
+}
+
+function delR(e,id){e.stopPropagation();recipes=recipes.filter(r=>r.id!==id);save();render();showToast('Receta eliminada');}
+
+function shift(dir){wo+=dir;render();}
+
+function goToday(){if(!epoch)epoch=getCurrentMon();wo=Math.round((getCurrentMon()-epoch)/(7*24*3600*1000));render();}
+
+function openSuggester(wOff,day){
+  const favorites=Object.keys(ratings).filter(name=>ratings[name]==='liked');
+  if(!favorites.length){openModal(wOff,day);return;} // sin favoritas → modal normal
+  sugState.wo=wOff;sugState.day=day;sugState.type=null;sugState.lastSuggested=null;
+  // Renderizar categorías
+  const catsEl=document.getElementById('sugCats');
+  catsEl.innerHTML='';
+  Object.entries(C).forEach(([type,col])=>{
+    const hasFavs=favorites.some(name=>{
+      const r=recipes.find(x=>x.name===name);
+      return r&&r.type===type;
+    });
+    const btn=mk('div','sug-cat'+(hasFavs?'':' sug-cat-empty'));
+    btn.style.background=col.bg;btn.style.color=col.dark;
+    btn.innerHTML=`<div class="sug-cat-dot" style="background:${col.mid}"></div>${TYPE_LABELS[type]}${hasFavs?'':' <span style="font-size:9px;opacity:.5;">(sin favoritas)</span>'}`;
+    if(hasFavs)btn.onclick=()=>{sugState.type=type;[...catsEl.children].forEach(b=>b.classList.remove('active'));btn.classList.add('active');suggestRecipe();};
+    catsEl.appendChild(btn);
+  });
+  document.getElementById('sugResult').innerHTML='';
+  document.getElementById('sugOv').classList.add('open');
+}
+
+function closeSuggester(){document.getElementById('sugOv').classList.remove('open');}
+
+function suggestRecipe(){
+  const type=sugState.type;
+  const favorites=Object.keys(ratings).filter(name=>ratings[name]==='liked');
+  // Recetas favoritas de este tipo
+  const pool=favorites.filter(name=>{
+    const r=recipes.find(x=>x.name===name);
+    return r&&r.type===type;
+  });
+  if(!pool.length){document.getElementById('sugResult').innerHTML=`<div class="sug-empty">No hay favoritas de esta categoría todavía.</div>`;return;}
+
+  // Excluir recetas recientes (últimas 2 semanas) y las ya en el calendario esta semana
+  const today=new Date();today.setHours(0,0,0,0);
+  const twoWeeksAgo=new Date(today);twoWeeksAgo.setDate(today.getDate()-14);
+  const recentNames=new Set(recipes.filter(r=>{const d=getDayDate(r.wo,r.day);return d>=twoWeeksAgo&&d<=today;}).map(r=>r.name));
+  const thisWeekNames=new Set(recipes.filter(r=>r.wo===sugState.wo).map(r=>r.name));
+  const available=pool.filter(name=>!recentNames.has(name)&&!thisWeekNames.has(name)&&name!==sugState.lastSuggested);
+
+  // Si no quedan, ampliar sin restricción de recientes
+  const finalPool=available.length?available:pool.filter(name=>!thisWeekNames.has(name)&&name!==sugState.lastSuggested);
+  const pick=finalPool.length?finalPool[Math.floor(Math.random()*finalPool.length)]:pool[Math.floor(Math.random()*pool.length)];
+  sugState.lastSuggested=pick;
+
+  const r=recipes.find(x=>x.name===pick);
+  const col=r?C[r.type]||C.huhn:C[sugState.type];
+  const isRecent=recentNames.has(pick);
+  document.getElementById('sugResult').innerHTML=`
+    <div class="sug-card" style="background:${col.bg};color:${col.dark};">
+      <div style="flex:1;">
+        <div class="sug-card-name">${pick}</div>
+        <div class="sug-card-meta">${r?.time||''}${isRecent?' · ⚠️ cocinada recientemente':''}</div>
+      </div>
+    </div>
+    <div class="sug-actions">
+      <button class="btn btn-dk" style="flex:1;" onclick="confirmSuggestion('${pick.replace(/'/g,"\\'")}')">✓ Añadir esta receta</button>
+      <button class="btn" onclick="suggestRecipe()">🔄 Otra</button>
+    </div>`;
+}
+
+function confirmSuggestion(name){
+  const r=recipes.find(x=>x.name===name);
+  if(!r){closeSuggester();return;}
+  // Crear nueva receta en el slot seleccionado
+  recipes.push({id:nid++,name:r.name,type:r.type,time:r.time,ings:r.ings,wo:sugState.wo,day:sugState.day});
+  save();closeSuggester();render();showToast(`${r.name} añadida`);
+}
+
+function openModal(wOff,day){
+  const ws=document.getElementById('mWeek');ws.innerHTML='';
+  for(let w=wo;w<wo+4;w++){const m=getMon(w);const o=document.createElement('option');o.value=w;o.textContent=`Sem. ${getKW(m)} (${fmt(m)})`;if(w===wOff)o.selected=true;ws.appendChild(o);}
+  if(day!==null)document.getElementById('mDay').value=day;
+  ['mName','mTime','mIngs'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('modalOv').classList.add('open');
+}
+
+function closeModal(){document.getElementById('modalOv').classList.remove('open');}
+
+function saveRecipe(){
+  const name=document.getElementById('mName').value.trim();if(!name)return;
+  const wOff=parseInt(document.getElementById('mWeek').value);
+  const day=parseInt(document.getElementById('mDay').value);
+  if(recipes.find(r=>r.wo===wOff&&r.day===day)){showToast('Este día ya está ocupado — elimina primero la receta');return;}
+  recipes.push({id:nid++,name,type:document.getElementById('mType').value,time:document.getElementById('mTime').value.trim(),ings:document.getElementById('mIngs').value.split(',').map(s=>s.trim()).filter(Boolean).map(s=>({name:s,qty:null})),wo:wOff,day});
+  save();closeModal();render();showToast('Receta guardada');
+}
+
+function annotateStep(text, ings){
+  if(!text||!ings||!ings.length) return text;
+
+  // Build candidate tokens from each ingredient name:
+  // Use full name + each individual word (length >= 4) as fallback
+  const candidates=[];
+  for(const ing of ings){
+    if(!ing.name||!ing.qty) continue;
+    const qty=String(ing.qty).trim();
+    if(!qty||qty==='—'||qty==='null'||qty==='undefined') continue;
+    const name=ing.name.trim();
+    // Full name first (highest priority)
+    candidates.push({token:name, qty, len:name.length});
+    // Also add significant words (>=4 chars) from the name
+    name.split(/[\s,\-\/]+/).forEach(w=>{
+      if(w.length>=4) candidates.push({token:w, qty, len:w.length});
+    });
+  }
+  // Sort longest first to avoid partial clobbering
+  candidates.sort((a,b)=>b.len-a.len);
+
+  let result=text;
+  const annotated=new Set(); // avoid double-annotating same qty span
+
+  for(const {token,qty} of candidates){
+    if(annotated.has(token.toLowerCase())) continue;
+    try{
+      const esc=token.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+      // Word-boundary aware: not preceded/followed by word char
+      const re=new RegExp('(?<![\\wäöüÄÖÜß])('+esc+')(?![\\wäöüÄÖÜß])','i');
+      if(re.test(result)){
+        let done=false;
+        result=result.replace(new RegExp('(?<![\\wäöüÄÖÜß])('+esc+')(?![\\wäöüÄÖÜß])','gi'),(match)=>{
+          if(done) return match;
+          done=true;
+          annotated.add(token.toLowerCase());
+          return `<span class="step-qty">${qty}</span> ${match}`;
+        });
+      }
+    }catch(e){}
+  }
+  return result;
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 init();
 
 </script>
