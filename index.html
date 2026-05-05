@@ -639,7 +639,6 @@ body{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background
 </head>
 <body>
 
-
 <!-- LOADING OVERLAY -->
 <div id="loadingOverlay" style="display:flex;position:fixed;inset:0;z-index:9999;background:rgba(245,243,239,.92);align-items:center;justify-content:center;flex-direction:column;gap:14px;">
   <div style="font-family:'Lora',serif;font-size:22px;font-weight:600;color:#1c1c1c;">MartaFresh</div>
@@ -720,7 +719,7 @@ body{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background
       <button class="tab tab-mobile" onclick="switchTab('mlist')">🛒 Lista</button>
       <button class="tab tab-desktop" onclick="switchTab('list')">Lista de la compra</button>
       <button class="tab tab-desktop" onclick="switchTab('preise')">Precios</button>
-      
+      <button class="tab tab-desktop" onclick="switchTab('analisis')">Análisis</button>
       <button class="tab" onclick="switchTab('pdf')">📄 PDF</button>
     </div>
   </div>
@@ -746,7 +745,7 @@ body{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background
   <div class="gear-section">Navegar</div>
   <button class="gear-item" onclick="switchTab('list');closeGearPanel()">🛒 Lista de la compra</button>
   <button class="gear-item" onclick="switchTab('preise');closeGearPanel()">💶 Precios</button>
-  
+  <button class="gear-item" onclick="switchTab('analisis');closeGearPanel()">📊 Análisis</button>
   <button class="gear-item" onclick="switchTab('pdf');closeGearPanel()">📄 Importar PDF</button>
   <div class="gear-section">Gestión</div>
   <button class="gear-item" onclick="openAvoidModal();closeGearPanel()">⚙️ Preferencias</button>
@@ -1017,7 +1016,7 @@ body{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background
       </div>
       <div class="fg-m"><label>Tiempo</label><input type="text" id="mTime" placeholder="30 min"/></div>
     </div>
-    <div class="fg-m"><label>Ingredientes (separados por coma)</label><input type="text" id="mIngs" placeholder="Patatas, nata, brócoli..."/></div>
+    <div class="fg-m"><label>Ingredientes (separados por coma)</label><input type="text" id="mIngs" placeholder="Patatas, p1, brócoli..."/></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
       <div class="fg-m"><label>Semana</label><select id="mWeek"></select></div>
       <div class="fg-m"><label>Día</label>
@@ -1039,6 +1038,17 @@ body{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background
 <div class="toast" id="toast"></div>
 
 <!-- PANE ANÁLISIS -->
+<div class="pane" id="pane-analisis" style="padding:16px;max-width:900px;margin:0 auto;">
+  <div class="an-week-nav">
+    <button onclick="anWo--;renderAnalisis()">‹ Anterior</button>
+    <div class="an-week-label" id="anWeekLabel"></div>
+    <button onclick="anWo++;renderAnalisis()">Siguiente ›</button>
+  </div>
+  <div id="anContent"></div>
+  <div id="anWeight"></div>
+</div>
+
+<!-- PANE: PDF IMPORT -->
 <div class="pane" id="pane-pdf" style="padding:20px;max-width:680px;margin:0 auto;">
 
 <style>
@@ -1269,7 +1279,7 @@ const SUPA_URL='https://rnzsgsiiajusmrvvatrj.supabase.co';
 const SUPA_KEY='sb_publishable_aSDL0I0KLVFof2mpsRjBRw_tqgSdq6U';
 const SUPA_HEADERS={'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'};
 // ── USER KEY ────────────────────────────────────────────────────────────────
-const USER_SLUG = 'marta'; // Hardcoded para Marta
+const USER_SLUG = 'marta';
 function getDataKey(){ return 'hf_v4_' + USER_SLUG; }
 function getRecipesKey(){ return 'hf_recipes_' + USER_SLUG; }
 // ────────────────────────────────────────────────────────────────────────────
@@ -1474,7 +1484,7 @@ function render(){
   document.getElementById('wrangeLabel').textContent=`${fmt(m0)} – ${fmt(s3)}`;
   renderShared();
   // Refresh analysis if tab is active
-  
+  if(document.getElementById('pane-analisis')?.classList.contains('active'))renderAnalisis();
 }
 
 function makeChip(r){
@@ -1540,7 +1550,7 @@ function dropR(wo,day){
   if(ex&&ex.id!==dragId){showToast('Este día ya tiene una receta');return;}
   const r=recipes.find(r=>r.id===dragId);
   if(r){r.wo=wo;r.day=day;save();render();
-    
+    if(document.getElementById('pane-analisis').classList.contains('active'))renderAnalisis();}
 }
 
 function dropLunch(wo,day){
@@ -1551,7 +1561,7 @@ function dropLunch(wo,day){
   lunches[targetKey]=lunches[dragLunchKey];
   delete lunches[dragLunchKey];
   save();render();showToast('Comida movida');
-  
+  if(document.getElementById('pane-analisis').classList.contains('active'))renderAnalisis();
 }
 
 function toggleCheatDay(key){
@@ -1669,7 +1679,7 @@ function openLunchModal(wOff,day){
   document.getElementById('lmodalOv').classList.add('open');
   document.getElementById('lmodalP1').focus();
   ['Marta'].forEach(p=>{
-    const el=document.getElementById(`lmodal${p}`);
+    const el=document.getElementById('lmodalP1');
     el.oninput=()=>checkLunchAvoidLive(p.toLowerCase());
   });
 }
@@ -1727,8 +1737,8 @@ function saveLunchModal(){
   
   const steps=getStepRows();
   
-  if(p1||ings.length||steps.length||prep_time)
-    lunches[key]={p1,prep_time,ings,p2_extra,steps,p2_note};
+  if(p1||p2||ings.length||p2_extra.length||steps.length||p2_note||prep_time)
+    lunches[key]={p1,p2,prep_time,ings,p2_extra,steps,p2_note};
   else delete lunches[key];
   save();closeLunchModal();render();showToast('Comida guardada');
 }
@@ -1930,7 +1940,7 @@ function confirmSobras(){
   save();render();closeSobras();
   document.getElementById('rmodalOv').classList.remove('open');
   document.getElementById('tmodalOv').classList.remove('open');
-  
+  if(document.getElementById('pane-analisis').classList.contains('active'))renderAnalisis();
 }
 
 function findNextFreeRecipeSlot(fromWo,fromDay){
@@ -2602,7 +2612,7 @@ function analyzeOffers(){
   recipes.forEach(r=>r.ings.forEach(ing=>{const n=iN(ing);const k=n.toLowerCase();if(!map[k])map[k]={name:n,weeks:new Set()};map[k].weeks.add(r.wo);}));
   Object.values(map).filter(i=>i.weeks.size>1).forEach(i=>{const ws=[...i.weeks].sort().map(w=>`Sem. ${getKW(getMon(w))}`).join(', ');shared.push(`${i.name} (${ws})`);});
   const ao=offers.filter(o=>{if(!o.until)return true;return new Date(o.until)>=new Date();}).map(o=>`${o.product}: ${OL[o.type]}`+(o.until?` hasta ${new Date(o.until).toLocaleDateString('es-ES')}`:'')).join('; ');
-  let msg='Soy el asistente de cocina de Marta. ';
+  let msg='Soy tu asistente MartaFresh. ';
   if(ao)msg+=`Ofertas activas en Carrefour: ${ao}. `;
   if(shared.length)msg+=`Ingredientes que se repiten entre semanas: ${shared.join('; ')}. `;
   msg+='¿Cómo puedo aprovechar mejor estas ofertas teniendo en cuenta la caducidad típica?';
@@ -2774,7 +2784,7 @@ function importData(ev){
       if(document.getElementById('pane-list').classList.contains('active')){renderShopDay();renderList();}
       if(document.getElementById('pane-offers').classList.contains('active'))renderOffers();
       if(document.getElementById('pane-preise').classList.contains('active'))renderPreise();
-      
+      if(document.getElementById('pane-analisis').classList.contains('active')){anWo=wo;renderAnalisis();}
       showToast('Datos importados correctamente');
     }catch(err){showToast('Error al importar: archivo no válido');}
   };
@@ -3308,7 +3318,7 @@ function switchTab(tab){
   if(tab==='list'){renderShopDay();renderList();}
   if(tab==='mlist'){renderMobileListPane();}
   if(tab==='preise')renderPreise();
-  
+  if(tab==='analisis'){anWo=wo;renderAnalisis();}
   if(tab==='hoy')renderHoy();
 }
 
@@ -3855,11 +3865,249 @@ function estimateLunchKcal(l){
   return 380; // generic
 }
 
-const FIJO=580; // desayuno 365 + cafés+choco 215
-const OBJETIVO=1550;
+const FIJO=550; // kcal fijas diarias (desayuno + snacks) — configurable en Preferencias
+const OBJETIVO=1500; // objetivo kcal diario — configurable en Preferencias
 const DAYS_F_SHORT=['Lu','Ma','Mi','Ju','Vi','Sá','Do'];
 
+function renderAnalisis(){
+  const mon=getMon(anWo);const sun=getDayDate(anWo,6);
+  const kw=getKW(mon);
+  document.getElementById('anWeekLabel').textContent=`Semana ${kw} · ${fmt(mon)} – ${fmt(sun)}`;
 
+  const weekRecs=recipes.filter(r=>r.wo===anWo).sort((a,b)=>a.day-b.day);
+
+  // ── Caloric data per day ──
+  const dayData=[];
+  for(let d=0;d<7;d++){
+    const rec=weekRecs.find(r=>r.day===d);
+    const lkey=lunchKey(anWo,d);
+    const l=lunches[lkey]||null;
+    const srcKey=`${anWo}_${d}`;
+    const lSrcKey=`lunch_${anWo}_${d}`;
+    const srcLeftover=leftovers[srcKey]; // recipe leftover this day
+    const lunchSrcLeftover=leftovers[lSrcKey]; // tupper leftover this day
+    const isTarget=Object.entries(leftovers).find(([k,lv])=>!lv.isLunch&&lv.targetWo===anWo&&lv.targetDay===d);
+    const lunchIsTarget=Object.entries(leftovers).find(([k,lv])=>lv.isLunch&&lv.targetWo===anWo&&lv.targetDay===d);
+    let cenaKcal=rec?getKcal(rec.name)||null:null;
+    let tupperKcal=estimateLunchKcal(l);
+    // Adjust recipe leftovers
+    if(cenaKcal&&srcLeftover)cenaKcal=Math.round(cenaKcal*(1-srcLeftover.fraction));
+    if(isTarget){
+      const [srcK,srcLv]=isTarget;
+      const srcRec=recipes.find(x=>x.id===srcLv.recipeId);
+      const srcKcal=srcRec?getKcal(srcRec.name)||null:null;
+      if(srcKcal)cenaKcal=Math.round(srcKcal*srcLv.fraction);
+    }
+    // Adjust lunch leftovers
+    if(tupperKcal&&lunchSrcLeftover)tupperKcal=Math.round(tupperKcal*(1-lunchSrcLeftover.fraction));
+    if(lunchIsTarget){
+      const [lSrcK,lSrcLv]=lunchIsTarget;
+      const [,lSrcWo,lSrcDay]=lSrcK.split('_').map(Number);
+      const srcL=lunches[lunchKey(lSrcWo,lSrcDay)]||null;
+      const srcLunchKcal=estimateLunchKcal(srcL);
+      if(srcLunchKcal)tupperKcal=Math.round(srcLunchKcal*lSrcLv.fraction);
+    }
+    const cheatKcal=cheatDays[`${anWo}_${d}`]||0;
+    const total=(cenaKcal||tupperKcal)?FIJO+(tupperKcal||0)+(cenaKcal||0)+cheatKcal:null;
+    const isPartial=total!==null&&(!cenaKcal||!tupperKcal);
+    dayData.push({day:d,rec,l,cenaKcal,tupperKcal,total,isPartial,cheatKcal});
+  }
+
+  const known=dayData.filter(x=>x.total!==null);
+  const media=known.length?Math.round(known.reduce((s,x)=>s+x.total,0)/known.length):null;
+  const deficit=media?OBJETIVO-media:null;
+  const mediaClass=deficit===null?'':deficit>=-50?'good':deficit>=-200?'warn':'bad';
+
+  // ── Protein distribution (whole DB) ──
+  const protCount={huhn:0,schwein:0,rind:0,fisch:0,veggi:0,wurst:0};
+  recipes.forEach(r=>{if(protCount[r.type]!==undefined)protCount[r.type]++;});
+  const protTotal=Object.values(protCount).reduce((s,v)=>s+v,0)||1;
+  const protLabels={huhn:'Pollo/Geflügel',schwein:'Cerdo',rind:'Ternera',fisch:'Pescado',veggi:'Vegetariano',wurst:'Embutido'};
+
+  // ── Supermarket best ──
+  const superTotals={carrefour:0,mercadona:0,lidl:0,consum:0};
+  const superCounts={carrefour:0,mercadona:0,lidl:0,consum:0};
+  Object.values(prices).forEach(pe=>{
+    SUPERS.forEach(s=>{if(pe[s]!==null&&pe[s]!==undefined){superTotals[s]+=pe[s];superCounts[s]++;}});
+  });
+  const superHasData=Object.values(superCounts).some(v=>v>0);
+  const superAvgs={};
+  SUPERS.forEach(s=>{superAvgs[s]=superCounts[s]>0?superTotals[s]/superCounts[s]:null;});
+  const minAvg=superHasData?Math.min(...SUPERS.filter(s=>superAvgs[s]!==null).map(s=>superAvgs[s])):null;
+
+  // ── MAX for bar scale ──
+  const maxKcal=Math.max(2600,...dayData.filter(x=>x.total).map(x=>x.total));
+
+  // ── HTML ──
+  let html='';
+
+  // Summary stats
+  html+=`<div class="an-stats">
+    <div class="an-stat">
+      <div class="asv">${FIJO}</div><div class="asl">kcal fijas/día</div>
+    </div>
+    <div class="an-stat ${mediaClass}">
+      <div class="asv">${media||'—'}</div><div class="asl">Media diaria</div>
+    </div>
+    <div class="an-stat ${deficit===null?'':deficit>0?'good':deficit>-100?'warn':'bad'}">
+      <div class="asv">${deficit===null?'—':(deficit>0?'+':'')+deficit}</div><div class="asl">Déficit medio</div>
+    </div>
+    <div class="an-stat">
+      <div class="asv">${OBJETIVO}</div><div class="asl">Objetivo kcal</div>
+    </div>
+  </div>`;
+
+  // Caloric bars
+  html+=`<div class="an-grid">
+  <div class="an-card full">
+    <div class="an-hdr"><span class="an-title">📊 Análisis calórico diario</span><span class="an-sub">Semana ${kw}</span></div>
+    <div class="an-body">`;
+  const objPct=(OBJETIVO/maxKcal)*100;
+  dayData.forEach(({day,rec,l,cenaKcal,tupperKcal,total,isPartial,cheatKcal})=>{
+    const lbl=DAYS_F_SHORT[day];
+    const pct=total?Math.min((total/maxKcal)*100,100):0;
+    const estado=total===null?'❓':cheatKcal?'🍕':total<=OBJETIVO+50?'✅':total<=OBJETIVO+250?'⚠️':'❌';
+    const color=total===null?'#ddd':cheatKcal?'#e05050':total<=OBJETIVO+50?'#6db870':total<=OBJETIVO+250?'#e0a830':'#e05050';
+    const cenaStr=rec?(cenaKcal?`${rec.name.split(' ')[0]} ${cenaKcal}kcal`:`${rec.name.split(' ')[0]} ?kcal`):'Sin cena';
+    const tupStr=l?(tupperKcal?`Tupper ~${tupperKcal}kcal`:'Tupper —'):'Sin tupper';
+    const cheatStr=cheatKcal?` + 🍕 +${cheatKcal}kcal`:'';
+    const partialMark=isPartial?'~':'';
+    html+=`<div class="day-bar-row">
+      <span class="day-bar-lbl">${lbl}</span>
+      <div style="flex:1;">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">${cenaStr} · ${tupStr}${cheatStr}</div>
+        <div class="day-bar-wrap">
+          <div class="day-bar-fill" style="width:${pct}%;background:${color};${isPartial?'opacity:.6':''}"></div>
+          <div class="day-bar-obj" style="left:${objPct}%;"></div>
+        </div>
+      </div>
+      <span class="day-bar-val">${total?partialMark+total+' kcal':'—'}</span>
+      <span class="day-bar-state">${estado}</span>
+    </div>`;
+  });
+  if(known.length<dayData.filter(x=>x.rec||x.l).length){
+    html+=`<div class="an-note">~ = estimación parcial (solo cena o solo tupper disponible). 🍕 = cheat day (+1.000 kcal). Línea roja = objetivo ${OBJETIVO} kcal.</div>`;
+  }
+  html+=`</div></div></div>`;
+
+  // Protein + supermarket row
+  html+=`<div class="an-grid">
+  <div class="an-card">
+    <div class="an-hdr"><span class="an-title">🥩 Distribución de proteínas</span><span class="an-sub">${recipes.length} recetas totales</span></div>
+    <div class="an-body">`;
+  if(protTotal>0){
+    const PROT_C={huhn:C.huhn.mid,schwein:C.schwein.mid,rind:C.rind.mid,fisch:C.fisch.mid,veggi:C.veggi.mid,wurst:C.wurst.mid};
+    // SVG donut
+    const r=40,cx=50,cy=50,stroke=18;
+    const circ=2*Math.PI*r;
+    let offset=0;
+    let slices='';
+    Object.entries(protCount).filter(([,v])=>v>0).forEach(([k,v])=>{
+      const pct=v/protTotal;
+      const dash=pct*circ;
+      const gap=circ-dash;
+      slices+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${PROT_C[k]}" stroke-width="${stroke}"
+        stroke-dasharray="${dash.toFixed(1)} ${gap.toFixed(1)}"
+        stroke-dashoffset="${(-offset*circ).toFixed(1)}"
+        transform="rotate(-90 ${cx} ${cy})"/>`;
+      offset+=pct;
+    });
+    html+=`<div class="prot-grid">
+      <svg class="prot-donut" width="100" height="100" viewBox="0 0 100 100">${slices}</svg>
+      <div class="prot-legend">`;
+    Object.entries(protCount).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{
+      html+=`<div class="prot-legend-row">
+        <div class="prot-dot" style="background:${PROT_C[k]};"></div>
+        <span>${protLabels[k]}</span>
+        <span class="prot-pct">${Math.round(v/protTotal*100)}%</span>
+      </div>`;
+    });
+    html+=`</div></div>`;
+  } else {
+    html+=`<div class="an-empty">Sin recetas todavía.</div>`;
+  }
+  html+=`</div></div>
+
+  <div class="an-card">
+    <div class="an-hdr"><span class="an-title">🛒 Precio medio por supermercado</span><span class="an-sub">Media por ingrediente con precio introducido</span></div>
+    <div class="an-body">`;
+  if(superHasData){
+    SUPERS.slice().sort((a,b)=>(superAvgs[a]||999)-(superAvgs[b]||999)).forEach(s=>{
+      if(superCounts[s]===0)return;
+      const isWinner=superAvgs[s]===minAvg;
+      html+=`<div class="super-an-row">
+        <div class="super-logo" style="background:${SUPER_COLORS[s]};width:10px;height:10px;border-radius:50%;flex-shrink:0;"></div>
+        <span class="super-an-name">${SUPER_NAMES[s]}</span>
+        <span style="font-size:10px;color:var(--muted);">${superCounts[s]} ingredientes</span>
+        <span class="super-an-price" style="color:${isWinner?'var(--green)':'var(--ink)'};">${superAvgs[s].toFixed(2)} €/prod</span>
+        ${isWinner?'<span class="super-an-badge">✓ Mejor</span>':''}
+      </div>`;
+    });
+    html+=`<div class="an-note">Media calculada solo sobre los ingredientes con precio introducido en cada supermercado. Cuantos más precios introduzcas, más fiable la comparativa.</div>`;
+  } else {
+    html+=`<div class="an-empty">Introduce precios en la pestaña Precios para ver la comparativa.</div>`;
+  }
+  html+=`</div></div></div>`;
+
+  // ── MACRO ANALYSIS ──────────────────────────────────────
+  // Targets for Nata: 1550 kcal/day, 80kg, sedentary, deficit goal
+  // Dinner targets (dinner = ~40% of total day):
+  // Total day targets: Prot ~90g, HC ~160g, Fat ~50g, Fibra >25g
+  // Dinner portion (~40%): Prot ~36g, HC ~64g, Fat ~20g, Fibra ~10g
+  const MACRO_TARGETS={prot:{label:'Proteína',unit:'g',target:36,color:'#5a9ec4',totalTarget:90},
+    hc:{label:'Hidratos',unit:'g',target:64,color:'#d4bc4a',totalTarget:160},
+    fett:{label:'Grasa',unit:'g',target:20,color:'#c48050',totalTarget:50},
+    fibra:{label:'Fibra',unit:'g',target:10,color:'#6db870',totalTarget:25}};
+  const MACRO_FIXED={prot:19,hc:84,fett:8,fibra:5}; // desayuno+cafés+choco
+
+  // Calc weekly macro averages from dinners with data
+  const macroRecs=weekRecs.filter(r=>{const d=recipeData[r.name];return d&&(d.prot||d.hc||d.fett);});
+  const macroAvg={};
+  if(macroRecs.length){
+    ['prot','hc','fett','fibra'].forEach(m=>{
+      const vals=macroRecs.map(r=>recipeData[r.name]?.[m]).filter(v=>v!=null);
+      macroAvg[m]=vals.length?vals.reduce((s,v)=>s+v,0)/vals.length:null;
+    });
+  }
+  const hasMacros=Object.values(macroAvg).some(v=>v!==undefined&&v!==null);
+
+  html+=`<div class="an-card full" style="margin-top:14px;">
+    <div class="an-hdr">
+      <span class="an-title">🔬 Macronutrientes semanales</span>
+      <span class="an-sub">Media de las cenas con datos · ${macroRecs.length} recetas</span>
+    </div>
+    <div class="an-body">`;
+
+  if(!hasMacros){
+    html+=`<div class="an-empty">Importa las recetas compactas con la barra de nutrientes para ver el análisis de macros.</div>`;
+  } else {
+    html+=`<div style="font-size:11px;color:var(--muted);margin-bottom:12px;">Media por cena + estimación del día completo (desayuno + tupper + cena)</div>`;
+    ['prot','hc','fett','fibra'].forEach(m=>{
+      const cfg=MACRO_TARGETS[m];
+      const dinnerVal=macroAvg[m];
+      if(dinnerVal===null||dinnerVal===undefined)return;
+      const totalEst=Math.round(dinnerVal+(MACRO_FIXED[m]||0));
+      const pct=Math.min((dinnerVal/cfg.target)*100,130);
+      const ratio=totalEst/cfg.totalTarget;
+      const badge=ratio<0.8?['low','Algo bajo']:ratio>1.25?['high','Alto']:['ok','✓ Bien'];
+      html+=`<div class="macro-row">
+        <span class="macro-lbl">${cfg.label}</span>
+        <div class="macro-bar-wrap">
+          <div class="macro-bar-fill" style="width:${pct}%;background:${cfg.color};opacity:.75;"></div>
+          <div class="macro-bar-target" style="left:${Math.min((cfg.target/cfg.target)*100,100)}%;"></div>
+        </div>
+        <span class="macro-val" style="color:var(--muted);">${dinnerVal.toFixed(0)}${cfg.unit} cena · <strong>${totalEst}${cfg.unit}</strong> día</span>
+        <span class="macro-badge ${badge[0]}">${badge[1]}</span>
+      </div>`;
+    });
+    html+=`<div class="an-note">Objetivos día completo: Proteína ~${MACRO_TARGETS.prot.totalTarget}g · Hidratos ~${MACRO_TARGETS.hc.totalTarget}g · Grasa ~${MACRO_TARGETS.fett.totalTarget}g · Fibra >${MACRO_TARGETS.fibra.totalTarget}g. 
+    Basado en 1.550 kcal/día con déficit moderado para pérdida de peso. La estimación del día incluye desayuno fijo y tupper estimado.</div>`;
+  }
+  html+=`</div></div>`;
+
+  document.getElementById('anContent').innerHTML=html;
+  renderWeight();
+}
 
 function weightKey(wo){
   const mon=getMon(wo);
@@ -4030,9 +4278,9 @@ async function init(){
     if(!epoch){epoch=getCurrentMon();save();}
     wo=Math.round((getCurrentMon()-epoch)/(7*24*3600*1000));
     msg.textContent='Montando el planificador…';
-    initShopDayControls();
-    render();
-    renderHoy();
+    try{ initShopDayControls(); }catch(e){ msg.textContent='Error initShop: '+e.message; console.error(e); return; }
+    try{ render(); }catch(e){ msg.textContent='Error render: '+e.message; console.error(e); return; }
+    try{ renderHoy(); }catch(e){ msg.textContent='Error renderHoy: '+e.message; console.error(e); return; }
     overlay.style.display='none';
     // Aviso si no hay datos
     if(!recipes.length&&!Object.keys(prices).length&&!Object.keys(lunches).length){
@@ -4053,7 +4301,6 @@ async function init(){
     console.error(e);
   }
 }
-
 init();
 
 </script>
