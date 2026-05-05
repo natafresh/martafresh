@@ -952,7 +952,7 @@ body{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background
     <div class="super-total" id="totalGadis"><div class="super-logo" style="background:#00a651"></div><span class="super-name">Gadis</span><span class="super-price" id="totalPriceGadis">—</span></div>
     <div class="super-total" id="totalAlimerka"><div class="super-logo" style="background:#e30613"></div><span class="super-name">Alimerka</span><span class="super-price" id="totalPriceAlimerka">—</span></div>
     <div class="super-total" id="totalFroiz"><div class="super-logo" style="background:#f7941d"></div><span class="super-name">Froiz</span><span class="super-price" id="totalPriceFroiz">—</span></div>
-    
+  </div>
   <div class="price-table-card">
     <table class="price-table" id="priceTable">
       <thead><tr>
@@ -1929,7 +1929,7 @@ function getPoolTuppers(wo,day,excluirKey=null){
   const totalSinTupper=FIJO+(cenaKcal||0);
   const margen=tdee-totalSinTupper; // kcal disponibles para el tupper sin pasar TDEE
 
-  // Pool: todos los tuppers menos proteína de la cena y evitados de Nata
+  // Pool: todos los tuppers menos proteína de la cena y lista de evitar
   const protExcluir=PROT_KEYWORDS[tipo]||[];
   let opciones=getAllTuppers().filter(t=>{
     const n=t.name.toLowerCase();
@@ -1992,8 +1992,6 @@ function sugerirSemanaCompleta(){
 
   dias.forEach(day=>{
     if(lunches[lunchKey(wo,day)]?.p1)return; // ya tiene tupper
-    const rec=recipes.find(r=>r.wo===wo&&r.day===day);
-    if(!rec)return; // sin cena ese día, no sugerimos tupper
 
     let opciones=getPoolTuppers(wo,day);
     // Excluir también lo asignado en esta misma sesión
@@ -2011,7 +2009,6 @@ function sugerirSemanaCompleta(){
       ings:elegido.ings||[],
       steps:elegido.steps||[],
       kcal:elegido.kcal||null,
-      p2_extra:[],p2_note:'',
     };
     asignadosEstaSesion.add(elegido.name.toLowerCase().trim());
     rellenados++;
@@ -3609,7 +3606,7 @@ function switchTab(tab){
   if(tab==='list'){renderShopDay();renderList();}
   if(tab==='mlist'){renderMobileListPane();}
   if(tab==='preise')renderPreise();
-  if(tab==='analisis'){anWo=wo;renderAnalisis();}
+  if(tab==='analisis'){anWo=wo;try{renderAnalisis();}catch(e){document.getElementById('anContent').innerHTML=`<div style='padding:20px;color:#c0392b;font-size:13px;'>Error al renderizar análisis: ${e.message}</div>`;console.error('renderAnalisis error:',e);}}
   if(tab==='hoy')renderHoy();
 }
 
@@ -4262,6 +4259,7 @@ function getMotivationalMessage({exceso,gPerSemana,perdiendo,dayData,known,anWo,
 }
 
 function renderAnalisis(){
+  try{
   const mon=getMon(anWo);const sun=getDayDate(anWo,6);
   const kw=getKW(mon);
   document.getElementById('anWeekLabel').textContent=`Semana ${kw} · ${fmt(mon)} – ${fmt(sun)}`;
@@ -4492,6 +4490,10 @@ function renderAnalisis(){
   document.getElementById('anContent').innerHTML=html;
   document.getElementById('anWeight').innerHTML='';
   renderWeightChart();
+  }catch(e){
+    document.getElementById('anContent').innerHTML=`<div style="padding:20px;color:#c0392b;font-family:'DM Sans',sans-serif;font-size:13px;background:#fdf0f0;border-radius:8px;">⚠️ Error en Análisis: <strong>${e.message}</strong><br><pre style="font-size:10px;margin-top:8px;white-space:pre-wrap;">${e.stack||''}</pre></div>`;
+    console.error('renderAnalisis crash:',e);
+  }
 }
 
 function weightKey(wo){const mon=getMon(wo);return `${getKW(mon)}_${mon.getFullYear()}`;}
@@ -4714,7 +4716,7 @@ function getStepRows(){
 }
 
 function openAvoidModal(){
-  renderAvoidTags();
+  try{ renderAvoidTags(); }catch(e){ console.error('renderAvoidTags error:',e); }
   // Rellenar perfil
   document.getElementById('profPeso').value=userProfile.peso||'';
   document.getElementById('profAltura').value=userProfile.altura||'';
