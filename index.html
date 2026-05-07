@@ -807,10 +807,9 @@ body{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background
     <div style="font-family:'Lora',serif;font-size:17px;font-weight:600;margin-bottom:6px;">Lista de la compra</div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:16px;">¿Para cuántos días quieres generar la lista?</div>
     <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:20px;">
+      <button class="shopd-day-btn" onclick="pickShopDays(1)">Mañana</button>
       <button class="shopd-day-btn" onclick="pickShopDays(3)">3 días</button>
-      <button class="shopd-day-btn" onclick="pickShopDays(5)">5 días</button>
       <button class="shopd-day-btn active" onclick="pickShopDays(7)">7 días</button>
-      <button class="shopd-day-btn" onclick="pickShopDays(14)">14 días</button>
     </div>
     <button style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;" onclick="closeShopDialog()">Cancelar</button>
   </div>
@@ -3787,9 +3786,10 @@ let _mlSyncInterval=null;
 let hideCheckedMl=false;
 let _mlLastCheckedStr='';
 let _mlDays=7; // days selected from shop dialog
+let _mlStartDate=null; // null = use configured shop date; set to tomorrow for "Mañana"
 
 function renderMobileListPane(){
-  const shopDate=getNextShopDate();
+  const shopDate=_mlStartDate||getNextShopDate();
   const days=_mlDays||7;
   const endDate=new Date(shopDate);endDate.setDate(shopDate.getDate()+days);
   const inPeriod=recipes.filter(r=>{const d=getDayDate(r.wo,r.day);return d>=shopDate&&d<endDate;});
@@ -3982,11 +3982,16 @@ let _mlistTotalBudget=0;
 function pickShopDays(days){
   closeShopDialog();
   _mlDays=days;
+  if(days===1){
+    const t=new Date();t.setHours(0,0,0,0);t.setDate(t.getDate()+1);_mlStartDate=t;
+  }else{
+    _mlStartDate=null;
+  }
   switchTab('mlist');
 }
 
 function openMobileList(days){
-  const shopDate=getNextShopDate();
+  const shopDate=_mlStartDate||getNextShopDate();
   const endDate=new Date(shopDate);endDate.setDate(shopDate.getDate()+days);
   const inPeriod=recipes.filter(r=>{const d=getDayDate(r.wo,r.day);return d>=shopDate&&d<endDate;});
 
