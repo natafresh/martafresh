@@ -1511,9 +1511,9 @@ function render(){
       if(isToday(cd))cell.classList.add('today');
       if(isPast(cd))cell.classList.add('past');
       const ck=`${absW}_${d}`;
-      const isCheat=!!cheatDays[ck];
+      const cheatVal=cheatDays[ck]||0;
       const dayHdr=mk('div','day-dt');
-      dayHdr.innerHTML=`<button class="cheat-btn${isCheat?' active':''}" title="${isCheat?'Quitar cheat day':'Marcar como cheat day'}" onclick="toggleCheatDay('${ck}')">${isCheat?'🍕 Cheat':'🍕'}</button>${fmt(cd)}`;
+      dayHdr.innerHTML=`<button class="cheat-btn${cheatVal===1000?' active':''}" title="Cheat day (+1000 kcal)" onclick="toggleCheat('${ck}',1000)">🍕</button><button class="cheat-btn${cheatVal===500?' active':''}" title="Capricho (+500 kcal)" onclick="toggleCheat('${ck}',500)">🥐</button>${cheatVal?`<span class="cheat-badge">+${cheatVal}</span>`:''}${fmt(cd)}`;
       cell.appendChild(dayHdr);
       const rec=recipes.find(r=>r.wo===absW&&r.day===d);
       if(rec){cell.appendChild(makeChip(rec));}
@@ -1617,9 +1617,9 @@ function dropLunch(wo,day){
   if(document.getElementById('pane-analisis').classList.contains('active'))renderAnalisis();
 }
 
-function toggleCheatDay(key){
-  if(cheatDays[key])delete cheatDays[key];
-  else cheatDays[key]=1000;
+function toggleCheat(key,amount){
+  if(cheatDays[key]===amount)delete cheatDays[key];
+  else cheatDays[key]=amount;
   save();render();
 }
 
@@ -4356,7 +4356,7 @@ function renderAnalisis(){
       html+=`<div class="day-bar-row" style="${over?'background:#fff8f8;border-radius:6px;padding:2px 4px;margin:0 -4px;':''}">
         <span class="day-bar-lbl" style="font-weight:${over?'700':'400'}">${lbl}</span>
         <div style="flex:1;">
-          <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">${cenaStr} · ${tupStr}${cheatKcal?' · 🍕':''}${!total?' · sin datos':''}</div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">${cenaStr} · ${tupStr}${cheatKcal===1000?' · 🍕':cheatKcal===500?' · 🥐':''}${!total?' · sin datos':''}</div>
           <div class="day-bar-wrap">
             <div class="day-bar-fill" style="width:${pct}%;background:${color};"></div>
             <div class="day-bar-obj" style="left:${objPct}%;"></div>
