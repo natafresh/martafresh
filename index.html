@@ -3774,9 +3774,7 @@ function cookStep(dir){_cookStepIdx+=dir;if(_cookStepIdx<0)_cookStepIdx=0;render
 function openShopDialog(){document.getElementById('shopdOverlay').style.display='flex';}
 function closeShopDialog(){document.getElementById('shopdOverlay').style.display='none';}
 function handleShopBtn(){
-  // On mobile, go directly to the lista tab; on desktop, show the dialog
-  if(window.innerWidth<=680){switchTab('mlist');}
-  else{openShopDialog();}
+  openShopDialog();
 }
 
 // ── LISTA MÓVIL (PANE TAB) ───────────────────────────────────────────────────
