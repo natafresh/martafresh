@@ -809,6 +809,7 @@ body{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background
     <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:20px;">
       <button class="shopd-day-btn" onclick="pickShopDays(1)">Mañana</button>
       <button class="shopd-day-btn" onclick="pickShopDays(3)">3 días</button>
+      <button class="shopd-day-btn" onclick="pickShopDays(4)">4 días</button>
       <button class="shopd-day-btn active" onclick="pickShopDays(7)">7 días</button>
     </div>
     <button style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;" onclick="closeShopDialog()">Cancelar</button>
@@ -916,6 +917,7 @@ body{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background
         <select id="listDays" onchange="renderList()" style="font-family:'DM Sans',sans-serif;font-size:13px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--white);color:var(--ink);cursor:pointer;">
           <option value="1">Mañana</option>
           <option value="3">3 días</option>
+          <option value="4">4 días</option>
           <option value="7" selected>7 días</option>
         </select>
       </div>
@@ -3980,11 +3982,10 @@ let _mlistTotalBudget=0;
 function pickShopDays(days){
   closeShopDialog();
   _mlDays=days;
-  if(days===1){
-    const t=new Date();t.setHours(0,0,0,0);t.setDate(t.getDate()+1);_mlStartDate=t;
-  }else{
-    _mlStartDate=null;
-  }
+  const today=new Date();today.setHours(0,0,0,0);
+  const tomorrow=new Date(today);tomorrow.setDate(today.getDate()+1);
+  if(days===1||days===3){_mlStartDate=tomorrow;}
+  else{_mlStartDate=today;}
   switchTab('mlist');
 }
 
